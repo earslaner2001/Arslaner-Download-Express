@@ -12,7 +12,7 @@ YouTube, Twitter ve diğer destekli platformlardan video indirmek için gelişti
 ## 📥 İndir
 > Son sürüm kurulum dosyasını aşağıdan indirebilirsiniz:
 
-📦 **[Arslaner Download Express Setup v1.0.0.exe](https://github.com/kullaniciadi/projeadi/releases/latest)**
+📦 **[Arslaner Download Express Setup v1.0.0.exe](https://github.com/earslaner2001/Arslaner-Download-Express/releases/latest)**
 
 ## 💡 Geliştirici Notu
 Bu proje IDM gibi karışık programlara alternatif olarak geliştirilmiştir.  
