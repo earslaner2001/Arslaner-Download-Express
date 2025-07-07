@@ -1,0 +1,50 @@
+{
+  "name": "arslaner-download-express",
+  "version": "1.0.0",
+  "description": "Emirhan Arslaner'in IDM alternatifi",
+  "author": "Emirhan Arslaner",
+  "main": "main.js",
+  "scripts": {
+    "clean": "rimraf dist",
+    "build": "npm run clean && electron-builder --win",
+    "start": "electron ."
+  },
+  "build": {
+    "appId": "com.arslaner.downloader",
+    "productName": "Arslaner Download Express",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "**/*",
+      "!downloads"
+    ],
+    "win": {
+      "target": "nsis",
+      "icon": "icon.ico",
+      "signAndEditExecutable": false,
+      "verifyUpdateCodeSignature": false
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Arslaner Download Express"
+    },
+    "asar": true,
+    "asarUnpack": [
+      "yt-dlp.exe",
+      "ffmpeg.exe"
+    ]
+  },
+  "devDependencies": {
+    "electron": "^28.3.3",
+    "electron-builder": "^26.0.12"
+  },
+  "dependencies": {
+    "axios": "^1.9.0",
+    "progress": "^2.0.3"
+  }
+}
