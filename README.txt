@@ -18,10 +18,6 @@ YouTube, Twitter ve diğer destekli platformlardan video indirmek için gelişti
 Bu proje IDM gibi karışık programlara alternatif olarak geliştirilmiştir.  
 Her türlü geri bildirim, katkı ve öneri memnuniyetle kabul edilir.
 
----
-
-## 📸 Görseller
-![uygulama](screenshot.png)
 ## 📜 Lisans
 Bu proje [MIT Lisansı](LICENSE) altında lisanslanmıştır.
 ## 📞 İletişim
