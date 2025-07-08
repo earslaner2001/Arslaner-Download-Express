@@ -16,8 +16,3 @@ Potansiyel bir güvenlik açığı bulduysanız veya bir sorun fark ettiyseniz:
 📧 **earslaner2001@gmail.com** adresine ulaşabilirsiniz.  
 Dürüst uyarı yapan herkesin emeğine saygı duyarım.  
 Açığı doğruladıktan sonra makul süre içinde yama yayımlanır.
-
----
-
-> Arslaner Download Express açık kaynaklıdır.  
-> Koddan korkma, aç oku, varsa sor bir mail at.
