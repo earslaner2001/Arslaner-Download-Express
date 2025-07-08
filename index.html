@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="tr">
+
+<head>
+  <meta charset="UTF-8">
+  <title>Arslaner Download Express</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
+
+    body {
+      font-family: 'Share Tech Mono', monospace;
+      background: url('https://i.pinimg.com/originals/06/60/ef/0660efe82fa3da42ed56eef013171835.gif') no-repeat center center fixed;
+      background-size: cover;
+      color: #ff4c4c;
+      padding: 40px;
+      max-width: 500px;
+      margin: auto;
+      text-shadow: 0 0 5px #ff4c4c, 0 0 10px #ff1c1c;
+    }
+
+    h2,
+    h3 {
+      color: #ff4c4c;
+      margin-bottom: 10px;
+    }
+
+    input,
+    select,
+    button {
+      display: block;
+      width: 100%;
+      margin-top: 15px;
+      padding: 12px;
+      border: none;
+      border-radius: 10px;
+      font-size: 15px;
+      box-sizing: border-box;
+    }
+
+    input,
+    select {
+      background-color: rgba(30, 30, 30, 0.8);
+      color: #ffdddd;
+    }
+
+    button {
+      background: linear-gradient(135deg, #ff0000, #990000);
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+      transition: transform 0.1s ease-in-out, box-shadow 0.2s;
+      text-shadow: 0 0 5px white;
+    }
+
+    button:hover {
+      transform: scale(1.03);
+      box-shadow: 0 0 15px #ff0000a0;
+    }
+
+    button:active {
+      transform: scale(0.97);
+    }
+
+    progress {
+      width: 100%;
+      height: 20px;
+      margin-top: 25px;
+      appearance: none;
+    }
+
+    progress::-webkit-progress-bar {
+      background-color: #222;
+      border-radius: 10px;
+    }
+
+    progress::-webkit-progress-value {
+      background-color: #ff0000;
+      border-radius: 10px;
+    }
+
+    #status {
+      margin-top: 10px;
+      font-weight: bold;
+      color: #fff;
+      text-shadow: 0 0 5px red, 0 0 10px #ff4444;
+    }
+
+    hr {
+      border: none;
+      height: 1px;
+      background-color: #ff4444;
+      margin: 30px 0;
+    }
+  </style>
+</head>
+
+<body>
+  <h2>📥 Arslaner Download Express</h2>
+  <input type="text" id="url" placeholder="İndirme linkini buraya gir" />
+  <input type="text" id="filename" placeholder="Dosya adını yaz (örnek.zip)" />
+  <button onclick="startDownload()">Dosya İndir</button>
+
+  <hr />
+  <h3>📺 YouTube Video İndir</h3>
+  <input type="text" id="yturl" placeholder="YouTube linkini veya başlık yaz" />
+  <input type="text" id="ytfilename" placeholder="Dosya adı (örnek.mp4)" />
+  <select id="format">
+    <option value="bestvideo[height<=1080]+bestaudio/best[height<=1080]">1080p MP4 (video + ses)</option>
+    <option value="bestaudio">Sadece Ses (MP3)</option>
+    <option value="best">Otomatik En İyi Kalite</option>
+  </select>
+  <button onclick="downloadYT()">YouTube'dan İndir</button>
+
+  <progress id="progressBar" value="0" max="100"></progress>
+  <p id="status"></p>
+
+  <script>
+    const { ipcRenderer } = require('electron');
+
+    function startDownload() {
+      const url = document.getElementById('url').value;
+      const filename = document.getElementById('filename').value;
+      if (!url.startsWith("http")) {
+        document.getElementById('status').innerText = "❌ Hatalı link! Lütfen geçerli bir link gir.";
+        return;
+      }
+      document.getElementById('status').innerText = "İndirme başladı...";
+      document.getElementById('progressBar').value = 0;
+      ipcRenderer.send('start-download', url, filename);
+    }
+
+    function downloadYT() {
+      const yturl = document.getElementById('yturl').value;
+      const searchURL = yturl.startsWith("http") ? yturl : `ytsearch:${yturl}`;
+      const filename = document.getElementById('ytfilename').value;
+      const format = document.getElementById('format').value;
+
+      document.getElementById('status').innerText = "YouTube indirme başladı...";
+      document.getElementById('progressBar').value = 0;
+
+      ipcRenderer.send('start-ytdlp', searchURL, filename, format);
+    }
+
+    ipcRenderer.on('download-progress', (event, percent) => {
+      document.getElementById('progressBar').value = percent;
+      document.getElementById('status').innerText = `${percent}% indirildi...`;
+    });
+
+    ipcRenderer.on('download-complete', (event, file) => {
+      document.getElementById('status').innerText = `✅ ${file} indirildi!`;
+      document.getElementById('progressBar').value = 100;
+    });
+
+    ipcRenderer.on('download-error', (event, message) => {
+      document.getElementById('status').innerText = `❌ Hata: ${message}`;
+    });
+  </script>
+</body>
+
+</html>
