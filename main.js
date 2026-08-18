@@ -17,6 +17,52 @@ let mainWindow;
 let activeDownload = null;
 const binariesManager = new BinariesManager();
 
+const LICENSE_STORE_URL = 'https://mediapull.lemonsqueezy.com';
+const PRO_FORMATS = new Set(['yt-4k-avc1', 'yt-prores', 'yt-wav']);
+let isProUser = false;
+let licenseMasked = '';
+
+function licenseFilePath() {
+  return path.join(app.getPath('userData'), 'license.json');
+}
+
+function loadLicenseState() {
+  try {
+    const raw = JSON.parse(fs.readFileSync(licenseFilePath(), 'utf8'));
+    isProUser = raw.isPro === true;
+    licenseMasked = typeof raw.masked === 'string' ? raw.masked : '';
+  } catch {
+    isProUser = false;
+    licenseMasked = '';
+  }
+}
+
+function saveLicenseState() {
+  fs.writeFileSync(licenseFilePath(), JSON.stringify({
+    isPro: isProUser,
+    masked: licenseMasked,
+    activatedAt: new Date().toISOString()
+  }, null, 2), 'utf8');
+}
+
+function maskLicenseKey(key) {
+  const k = key.replace(/\s+/g, '').toUpperCase();
+  if (k.length < 8) return 'MP-PRO-••••';
+  return `${k.slice(0, 7)}••••${k.slice(-2)}`;
+}
+
+function isValidMockLicenseKey(key) {
+  return /^MP-PRO-[A-Z0-9]{6,}$/i.test(String(key || '').trim());
+}
+
+function getLicenseSnapshot() {
+  return {
+    isPro: isProUser,
+    masked: licenseMasked,
+    storeUrl: LICENSE_STORE_URL
+  };
+}
+
 function resolveAppIcon() {
   const candidates = process.platform === 'win32'
     ? ['icon.ico', 'icon.png']
@@ -63,6 +109,8 @@ function isTwitterOrXUrl(url) {
 
 const YT_NLE_FORMAT =
   'bestvideo[height<=1080][vcodec^=avc1]+bestaudio[ext=m4a]/bestvideo[height<=1080][vcodec^=avc1]+bestaudio/best[vcodec^=avc1]/best';
+const YT_4K_NLE_FORMAT =
+  'bestvideo[height<=2160][vcodec^=avc1]+bestaudio[ext=m4a]/bestvideo[height<=2160][vcodec^=avc1]+bestaudio/best[vcodec^=avc1]/best';
 const TW_NLE_FORMAT =
   'best[protocol=https][vcodec^=avc1][ext=mp4]/best[vcodec^=avc1][ext=mp4]/bestvideo[vcodec^=avc1]+bestaudio[ext=m4a]/bestvideo[vcodec^=avc1]+bestaudio/best[vcodec^=avc1]/best';
 const NLE_FFMPEG_ARGS = 'ffmpeg:-c:v libx264 -pix_fmt yuv420p -preset veryfast -c:a aac -b:a 192k';
@@ -137,11 +185,18 @@ function buildDownloadCommand(url, format) {
 
   if (format === 'bestaudio') {
     args.push('-f', 'bestaudio', '-x', '--audio-format', 'mp3');
+  } else if (format === 'yt-wav') {
+    args.push('-f', 'bestaudio', '-x', '--audio-format', 'wav');
+  } else if (format === 'yt-prores') {
+    args.push('-f', YT_4K_NLE_FORMAT);
+    args.push('--merge-output-format', 'mov');
+    args.push('--postprocessor-args', 'ffmpeg:-c:v prores_ks -profile:v 3 -pix_fmt yuv422p10le -c:a pcm_s16le');
   } else if (isTwitter) {
     args.push('-f', TW_NLE_FORMAT);
     appendNleCompatArgs(args);
   } else {
-    args.push('-f', format && format !== 'best' ? format : YT_NLE_FORMAT);
+    const selected = format === 'yt-4k-avc1' ? YT_4K_NLE_FORMAT : (format && format !== 'best' ? format : YT_NLE_FORMAT);
+    args.push('-f', selected);
     appendNleCompatArgs(args);
   }
   args.push(urlTrimmed);
@@ -281,7 +336,7 @@ function createWindow() {
     autoHideMenuBar: true,
     icon: APP_ICON || undefined,
     webPreferences: {
-      preload: path.join(__dirname, 'preload.js'),
+      preload: path.join(__dirname, 'preload', 'index.js'),
       nodeIntegration: true,
       contextIsolation: false
     }
@@ -375,8 +430,22 @@ app.whenReady().then(async () => {
   if (APP_ICON && process.platform === 'darwin' && app.dock) {
     app.dock.setIcon(APP_ICON);
   }
+  loadLicenseState();
   await checkAndDownloadBinaries();
   createWindow();
+
+  ipcMain.handle('license:check', () => getLicenseSnapshot());
+
+  ipcMain.handle('license:activate', (_event, key) => {
+    if (!isValidMockLicenseKey(key)) {
+      return { ok: false, error: 'Geçersiz lisans anahtarı. Örnek: MP-PRO-XXXXXX' };
+    }
+    isProUser = true;
+    licenseMasked = maskLicenseKey(key);
+    saveLicenseState();
+    mainWindow?.webContents.send('license:updated', getLicenseSnapshot());
+    return { ok: true, ...getLicenseSnapshot() };
+  });
 
   ipcMain.on('pause-ytdlp', () => {
     if (!activeDownload?.proc || activeDownload.paused || activeDownload.pausing) return;
@@ -422,6 +491,12 @@ app.whenReady().then(async () => {
   ipcMain.on('start-ytdlp', (event, url, format) => {
     if (!url || typeof url !== 'string' || url.trim() === '') {
       event.sender.send('download-error', 'Geçerli bir video bağlantısı girilmedi.');
+      return;
+    }
+
+    if (PRO_FORMATS.has(format) && !isProUser) {
+      event.sender.send('download-error', 'Bu format Pro plana özel. Lütfen lisansını etkinleştir.');
+      event.sender.send('license:required');
       return;
     }
 

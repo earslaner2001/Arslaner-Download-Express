@@ -1,1 +1,1 @@
-// preload boş
+require('./preload/index.js');

@@ -71,7 +71,40 @@
     .titlebar-controls {
       display: flex;
       flex-shrink: 0;
+      align-items: center;
       -webkit-app-region: no-drag;
+    }
+
+    .license-badge {
+      height: 22px;
+      margin: 0 8px 0 0;
+      padding: 0 10px;
+      width: auto;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 68, 68, 0.45);
+      background: rgba(40, 18, 18, 0.95);
+      color: #ffb0b0;
+      font-size: 10px;
+      letter-spacing: 0.04em;
+      cursor: pointer;
+      text-shadow: none;
+      white-space: nowrap;
+    }
+    .license-badge:hover {
+      transform: none;
+      box-shadow: 0 0 10px rgba(255, 0, 0, 0.25);
+      border-color: rgba(255, 68, 68, 0.8);
+      color: #ffd0d0;
+    }
+    .license-badge.pro {
+      border-color: #d4a017;
+      background: linear-gradient(135deg, #3a2a08, #1a1406);
+      color: #ffd56a;
+      text-shadow: 0 0 8px rgba(212, 160, 23, 0.55);
+    }
+    .license-badge.pro:hover {
+      border-color: #f0c14b;
+      color: #ffe9a8;
     }
 
     .win-btn {
@@ -427,6 +460,89 @@
     }
     .corner-link:hover { color: rgba(255,100,100,0.95); text-decoration: underline; }
     .corner-link:active, .corner-link:hover { transform: none; box-shadow: none; }
+
+    .license-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 200;
+      background: rgba(0, 0, 0, 0.62);
+      align-items: center;
+      justify-content: center;
+      padding: 18px;
+    }
+    .license-overlay.open { display: flex; }
+
+    .license-modal {
+      width: 100%;
+      max-width: 420px;
+      background: #121214;
+      border: 1px solid rgba(255, 68, 68, 0.45);
+      border-radius: 12px;
+      box-shadow: 0 18px 50px rgba(0, 0, 0, 0.55), 0 0 24px rgba(255, 0, 0, 0.12);
+      padding: 16px 16px 14px;
+      color: #ffdddd;
+      text-shadow: none;
+    }
+    .license-modal h3 {
+      margin: 0 0 8px;
+      font-size: 0.95rem;
+    }
+    .license-modal p.hint {
+      margin: 0 0 12px;
+      font-size: 11px;
+      color: rgba(255, 180, 180, 0.7);
+      line-height: 1.45;
+    }
+    .pro-list {
+      margin: 0 0 12px;
+      padding-left: 18px;
+      font-size: 12px;
+      color: #ffc8c8;
+      line-height: 1.7;
+    }
+    .license-modal input#license-key {
+      margin-top: 0;
+    }
+    .license-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 8px;
+    }
+    .license-actions button {
+      margin-top: 0;
+      font-size: 12px;
+      font-weight: bold;
+    }
+    button.license-buy {
+      background: rgba(30, 30, 30, 0.95);
+      border: 1px solid rgba(255, 68, 68, 0.45);
+      color: #ffcccc;
+      text-shadow: none;
+    }
+    button.license-buy:hover {
+      transform: none;
+      box-shadow: none;
+      border-color: rgba(255, 68, 68, 0.75);
+    }
+    .license-msg {
+      min-height: 1.2em;
+      margin: 8px 0 0;
+      font-size: 11px;
+    }
+    .license-msg.ok { color: #88ffbb; }
+    .license-msg.err { color: #ff6666; }
+    .modal-close {
+      float: right;
+      width: auto;
+      margin: 0;
+      padding: 2px 8px;
+      background: transparent;
+      color: #ffaaaa;
+      font-size: 16px;
+      line-height: 1;
+    }
+    .modal-close:hover { transform: none; box-shadow: none; color: #fff; }
   </style>
 </head>
 
@@ -437,6 +553,7 @@
       <span class="titlebar-title">MediaPull</span>
     </div>
     <div class="titlebar-controls">
+      <button type="button" class="license-badge" id="licenseBadge" title="Lisans yönetimi">[ Free Sürüm ]</button>
       <button type="button" class="win-btn" id="btnWinMin" title="Küçült" aria-label="Küçült">
         <svg viewBox="0 0 10 10"><rect y="4.5" width="10" height="1"/></svg>
       </button>
@@ -465,6 +582,9 @@
   <select id="format">
     <option value="bestvideo[height<=1080][vcodec^=avc1]+bestaudio[ext=m4a]/bestvideo[height<=1080][vcodec^=avc1]+bestaudio/best[vcodec^=avc1]/best">1080p MP4 H.264 (Premiere / After Effects)</option>
     <option value="bestaudio">Sadece Ses (MP3)</option>
+    <option value="yt-4k-avc1" data-pro="1">4K MP4 H.264 (Pro) 🔒</option>
+    <option value="yt-prores" data-pro="1">Apple ProRes 422 HQ (Pro) 🔒</option>
+    <option value="yt-wav" data-pro="1">Kayıpsız Ses WAV / 320kbps MP3 (Pro) 🔒</option>
   </select>
   <button type="button" class="dl-btn" id="btnYT" onclick="playClick(); startDownloadYT()">
     <span class="spinner" id="spnYT"></span>
@@ -508,9 +628,119 @@
   </footer>
   </main>
 
+  <div class="license-overlay" id="licenseOverlay" hidden>
+    <div class="license-modal" role="dialog" aria-labelledby="licenseTitle">
+      <button type="button" class="modal-close" id="btnLicenseClose" aria-label="Kapat">×</button>
+      <h3 id="licenseTitle">Lisans Yönetimi / Pro'ya Yükselt</h3>
+      <p class="hint">Pro plan toplu indirme, 4K / ProRes ve maksimum hız kilitlerini açar. Anahtar formatı: MP-PRO-XXXXXX</p>
+      <ul class="pro-list">
+        <li>Toplu indirme</li>
+        <li>4K MP4 ve Apple ProRes 422 HQ</li>
+        <li>Kayıpsız ses (WAV) ve maksimum hız</li>
+      </ul>
+      <input type="text" id="license-key" placeholder="Lisans anahtarını yapıştır" autocomplete="off" spellcheck="false" />
+      <div class="license-actions">
+        <button type="button" class="dl-btn" id="btnLicenseActivate">Doğrula ve Etkinleştir</button>
+        <button type="button" class="license-buy" id="btnLicenseBuy">Lisans Satın Al ($4.99/ay)</button>
+      </div>
+      <p class="license-msg" id="licenseMsg"></p>
+    </div>
+  </div>
+
   <script>
     const { ipcRenderer, shell } = require('electron');
     const SITE_URL = 'https://media-pull.vercel.app/';
+    const STORE_URL_FALLBACK = 'https://mediapull.lemonsqueezy.com';
+    const api = window.mediaPullAPI;
+
+    let isProUser = false;
+    let storeUrl = STORE_URL_FALLBACK;
+
+    function selectedFormatIsPro() {
+      const opt = document.getElementById('format').selectedOptions[0];
+      return opt?.dataset.pro === '1';
+    }
+
+    function applyLicenseUI(state) {
+      isProUser = !!state?.isPro;
+      if (state?.storeUrl) storeUrl = state.storeUrl;
+      const badge = document.getElementById('licenseBadge');
+      badge.classList.toggle('pro', isProUser);
+      badge.textContent = isProUser ? '[ PRO AKTİF ★ ]' : '[ PRO\'ya Geç ]';
+      document.querySelectorAll('#format option[data-pro="1"]').forEach((opt) => {
+        opt.textContent = opt.textContent.replace(/\s*🔒$/, '');
+        if (!isProUser && !opt.textContent.includes('🔒')) opt.textContent += ' 🔒';
+      });
+    }
+
+    function openLicenseModal(message = '', type = '') {
+      const overlay = document.getElementById('licenseOverlay');
+      overlay.hidden = false;
+      overlay.classList.add('open');
+      const msg = document.getElementById('licenseMsg');
+      msg.textContent = message;
+      msg.className = 'license-msg' + (type ? ` ${type}` : '');
+      document.getElementById('license-key').focus();
+    }
+
+    function closeLicenseModal() {
+      const overlay = document.getElementById('licenseOverlay');
+      overlay.classList.remove('open');
+      overlay.hidden = true;
+    }
+
+    function requireProOrOpenModal(reason) {
+      if (isProUser) return true;
+      setStatus(reason, 'error');
+      logLine(reason, 'warn');
+      openLicenseModal(reason, 'err');
+      return false;
+    }
+
+    async function refreshLicense() {
+      if (!api?.licenseCheck) return;
+      applyLicenseUI(await api.licenseCheck());
+    }
+
+    document.getElementById('licenseBadge').addEventListener('click', () => {
+      playClick();
+      openLicenseModal(isProUser ? 'Pro lisansın aktif.' : 'Pro özellikler için lisansını etkinleştir.', isProUser ? 'ok' : '');
+    });
+    document.getElementById('btnLicenseClose').addEventListener('click', closeLicenseModal);
+    document.getElementById('licenseOverlay').addEventListener('click', (e) => {
+      if (e.target.id === 'licenseOverlay') closeLicenseModal();
+    });
+    document.getElementById('btnLicenseBuy').addEventListener('click', () => {
+      playClick();
+      if (api?.openExternal) api.openExternal(storeUrl);
+      else shell.openExternal(storeUrl);
+    });
+    document.getElementById('btnLicenseActivate').addEventListener('click', async () => {
+      playClick();
+      const key = document.getElementById('license-key').value.trim();
+      const msg = document.getElementById('licenseMsg');
+      if (!key) {
+        msg.textContent = 'Lisans anahtarı gir.';
+        msg.className = 'license-msg err';
+        return;
+      }
+      const result = await api.licenseActivate(key);
+      if (result?.ok) {
+        applyLicenseUI(result);
+        msg.textContent = 'Pro plan etkinleştirildi.';
+        msg.className = 'license-msg ok';
+        logLine('Pro lisans etkinleştirildi.', 'ok');
+      } else {
+        msg.textContent = result?.error || 'Doğrulama başarısız.';
+        msg.className = 'license-msg err';
+      }
+    });
+
+    refreshLicense();
+    ipcRenderer.on('license:updated', (_e, state) => applyLicenseUI(state));
+    ipcRenderer.on('license:required', () => {
+      openLicenseModal('Bu format Pro plana özel. Lütfen lisansını etkinleştir.', 'err');
+    });
 
     // ── Pencere kontrolleri ──────────────────────────────
     const titlebar = document.getElementById('titlebar');
@@ -748,6 +978,9 @@
       if (!isYoutubeUrl(url)) {
         setStatus('Geçerli bir YouTube linki gir.', 'error');
         logLine('Geçersiz YouTube linki.', 'err');
+        return;
+      }
+      if (selectedFormatIsPro() && !requireProOrOpenModal('Bu format Pro plana özel. Lütfen Pro\'ya geç.')) {
         return;
       }
       clearLog();
