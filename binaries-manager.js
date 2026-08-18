@@ -17,10 +17,13 @@ class BinariesManager {
     this.updateStatePath = path.join(app.getPath('userData'), 'ytdlp-update.json');
     this.ytdlpPath = path.join(this.binariesDir, 'yt-dlp.exe');
     this.ffmpegPath = path.join(this.binariesDir, 'ffmpeg.exe');
+    this.denoPath = path.join(this.binariesDir, 'deno.exe');
+    this._selfUpdatePromise = null;
 
     this.YTDLP_URL = 'https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp.exe';
     this.FFMPEG_URL = 'https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-win64-gpl.zip';
     this.YTDLP_RELEASE_API = 'https://api.github.com/repos/yt-dlp/yt-dlp/releases/latest';
+    this.DENO_URL = 'https://github.com/denoland/deno/releases/latest/download/deno-x86_64-pc-windows-msvc.zip';
 
     this.migrateBinariesIfNeeded();
   }
@@ -250,6 +253,62 @@ class BinariesManager {
       console.error('FFmpeg indirme hatasi:', error);
       return false;
     }
+  }
+
+  async runYtDlpUpgrade() {
+    if (!fs.existsSync(this.ytdlpPath)) return false;
+    try {
+      await execAsync(`"${this.ytdlpPath}" -U`, {
+        timeout: 120000,
+        windowsHide: true
+      });
+      return true;
+    } catch (err) {
+      console.warn('yt-dlp -U basarisiz:', err.message);
+      return false;
+    }
+  }
+
+  async selfUpdateYtDlp({ forceDownload = false } = {}) {
+    if (this._selfUpdatePromise) return this._selfUpdatePromise;
+    this._selfUpdatePromise = (async () => {
+      const upgraded = await this.runYtDlpUpgrade();
+      if (upgraded) return true;
+      if (forceDownload) return this.downloadYtDlp();
+      return false;
+    })().finally(() => {
+      this._selfUpdatePromise = null;
+    });
+    return this._selfUpdatePromise;
+  }
+
+  async downloadDeno(onProgress) {
+    try {
+      const zipPath = path.join(this.binariesDir, 'deno.zip');
+      await this.downloadFile(this.DENO_URL, zipPath, onProgress);
+      const AdmZip = require('adm-zip');
+      const zip = new AdmZip(zipPath);
+      for (const entry of zip.getEntries()) {
+        if (entry.entryName === 'deno.exe' || entry.entryName.endsWith('/deno.exe')) {
+          zip.extractEntryTo(entry, this.binariesDir, false, true);
+          break;
+        }
+      }
+      if (fs.existsSync(zipPath)) fs.unlinkSync(zipPath);
+      return fs.existsSync(this.denoPath);
+    } catch (error) {
+      console.warn('Deno indirme hatasi:', error.message);
+      return false;
+    }
+  }
+
+  async ensureDeno() {
+    if (fs.existsSync(this.denoPath)) return true;
+    return this.downloadDeno();
+  }
+
+  getDenoPath() {
+    return this.denoPath;
   }
 
   getYtDlpPath() {

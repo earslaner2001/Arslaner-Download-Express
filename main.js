@@ -174,19 +174,85 @@ function isTwitterOrXUrl(url) {
   }
 }
 
-const YT_NLE_FORMAT =
-  'bestvideo[height<=1080][vcodec^=avc1]+bestaudio[ext=m4a]/bestvideo[height<=1080][vcodec^=avc1]+bestaudio/best[vcodec^=avc1]/best';
-const YT_4K_SOURCE_FORMAT =
-  'bestvideo[height>=2160]+bestaudio/bestvideo[height>=1440]+bestaudio/bestvideo[height<=2160]+bestaudio/best[height<=2160]/best';
 const TW_NLE_FORMAT =
-  'best[protocol=https][vcodec^=avc1][ext=mp4]/best[vcodec^=avc1][ext=mp4]/bestvideo[vcodec^=avc1]+bestaudio[ext=m4a]/bestvideo[vcodec^=avc1]+bestaudio/best[vcodec^=avc1]/best';
-const NLE_FFMPEG_ARGS = 'ffmpeg:-c:v libx264 -pix_fmt yuv420p -preset veryfast -c:a aac -b:a 192k';
+  'best[protocol=https][ext=mp4]/best[ext=mp4]/bestvideo+bestaudio/best';
 
-function appendNleCompatArgs(args) {
-  args.push(
-    '--merge-output-format', 'mp4',
-    '--postprocessor-args', NLE_FFMPEG_ARGS
-  );
+const FMT_1080 =
+  'bv*[height<=1080]+ba/b[height<=1080]/bv*+ba/b';
+const FMT_4K =
+  'bestvideo[height=2160]+bestaudio/bestvideo[height<=2160]+bestaudio/bestvideo+bestaudio/best';
+const FMT_PRORES =
+  'bestvideo+bestaudio/best';
+
+const PPA_1080 =
+  'VideoConvertor:-c:v libx264 -pix_fmt yuv420p -profile:v high -c:a aac -b:a 192k';
+const PPA_4K =
+  'VideoConvertor:-c:v libx264 -pix_fmt yuv420p -profile:v high -c:a aac -b:a 320k';
+const PPA_PRORES =
+  'VideoConvertor:-c:v prores_ks -profile:v 3 -vendor apl0 -bits_per_mb 8000 -pix_fmt yuv422p10le -c:a pcm_s16le';
+const PPA_MP3 = 'ExtractAudio:-b:a 256k';
+const PPA_WAV = 'ExtractAudio:-c:a pcm_s16le';
+
+function appendVideoPostprocessorArgs(args, videoConvertorPpa) {
+  args.push('--postprocessor-args', videoConvertorPpa);
+}
+
+function normalizeFormatKey(format) {
+  if (
+    format === 'bestaudio' ||
+    format === 'yt-wav' ||
+    format === 'yt-prores' ||
+    format === 'yt-4k-avc1' ||
+    format === 'yt-1080-avc1'
+  ) {
+    return format;
+  }
+  return 'yt-1080-avc1';
+}
+
+function applyFormatArgs(args, format, { isTwitter = false } = {}) {
+  switch (normalizeFormatKey(format)) {
+    case 'bestaudio':
+      args.push('-f', 'bestaudio/best');
+      args.push('-x', '--audio-format', 'mp3', '--audio-quality', '0');
+      args.push('--postprocessor-args', PPA_MP3);
+      break;
+    case 'yt-wav':
+      args.push('-f', 'bestaudio/best');
+      args.push('-x', '--audio-format', 'wav');
+      args.push('--postprocessor-args', PPA_WAV);
+      break;
+    case 'yt-prores':
+      args.push('-f', FMT_PRORES);
+      args.push('--merge-output-format', 'mov');
+      appendVideoPostprocessorArgs(args, PPA_PRORES);
+      break;
+    case 'yt-4k-avc1':
+      args.push('-f', FMT_4K);
+      args.push('-S', 'res:2160,fps');
+      args.push('--merge-output-format', 'mp4');
+      appendVideoPostprocessorArgs(args, PPA_4K);
+      break;
+    case 'yt-1080-avc1':
+    default:
+      args.push('-f', isTwitter ? TW_NLE_FORMAT : FMT_1080);
+      if (!isTwitter) args.push('-S', 'res:1080,fps');
+      args.push('--merge-output-format', 'mp4');
+      appendVideoPostprocessorArgs(args, PPA_1080);
+      break;
+  }
+}
+
+function resolveDenoPath() {
+  const localDeno = binariesManager.getDenoPath();
+  if (localDeno && fs.existsSync(localDeno)) return localDeno;
+
+  const denoName = process.platform === 'win32' ? 'deno.exe' : 'deno';
+  for (const dir of String(process.env.PATH || '').split(path.delimiter)) {
+    const candidate = path.join(dir, denoName);
+    if (fs.existsSync(candidate)) return candidate;
+  }
+  return null;
 }
 
 function buildYtDlpArgs(ffmpegPath, outputTemplate, {
@@ -194,21 +260,30 @@ function buildYtDlpArgs(ffmpegPath, outputTemplate, {
   twitter = false
 } = {}) {
   const args = [
-    '--ffmpeg-location', ffmpegPath,
-    '--encoding', 'utf-8',
+    '--ffmpeg-location', ffmpegPath
+  ];
+
+  if (youtube) {
+    const denoPath = resolveDenoPath();
+    if (denoPath) {
+      args.push('--js-runtimes', `deno:${denoPath}`);
+    }
+    args.push('--remote-components', 'ejs:github');
+  }
+
+  args.push(
+    '--force-ipv4',
+    '--no-check-certificates',
+    '--rm-cache-dir',
+    '--no-cache-dir',
     '--windows-filenames',
     '--continue',
     '--retries', '10',
     '--fragment-retries', '10',
-    '--concurrent-fragments', '8',
-    '--http-chunk-size', '10M',
+    '--encoding', 'utf-8',
+    '--extractor-args', 'youtube:player_client=web_creator,web_embedded,android_vr',
     '-o', outputTemplate
-  ];
-
-  if (youtube) {
-    args.push('--remote-components', 'ejs:github');
-    args.push('--js-runtimes', `node:${process.execPath}`);
-  }
+  );
 
   if (twitter) {
     args.push('--extractor-args', 'twitter:api=syndication');
@@ -220,9 +295,50 @@ function buildYtDlpArgs(ffmpegPath, outputTemplate, {
 function extractErrorMessage(log) {
   const errors = log.split('\n').filter((line) => /^\s*ERROR:/i.test(line));
   if (errors.length) {
-    return errors.map((line) => line.replace(/^\s*ERROR:\s*/i, '')).join(' ');
+    return errors
+      .map((line) => line.replace(/^\s*ERROR:\s*/i, '').replace(/\[info\]\s*/gi, '').trim())
+      .filter(Boolean)
+      .join(' ');
   }
-  return log.trim().split('\n').filter(Boolean).slice(-3).join(' ');
+  return log
+    .trim()
+    .split('\n')
+    .map((line) => line.replace(/\[info\]\s*/gi, '').trim())
+    .filter((line) => line && !/^\[(debug|youtube|twitter|x|generic)\]/i.test(line))
+    .slice(-3)
+    .join(' ');
+}
+
+function isYoutubeForbidden(log) {
+  return /unable to download video data:\s*HTTP Error 403|HTTP Error 403:\s*Forbidden|ERROR:.*\b403\b/i.test(log);
+}
+
+function cleanLogLine(line) {
+  return String(line || '')
+    .replace(/^\s*ERROR:\s*/i, '')
+    .replace(/\[info\]\s*/gi, '')
+    .trim();
+}
+
+function shouldSendLogLine(line) {
+  if (!line) return false;
+  if (isYoutubeForbidden(line)) return false;
+  if (/^\[(info|debug)\]/i.test(line)) return false;
+  if (/^\[(youtube|twitter|x|generic)\]/i.test(line) && !/^ERROR:/i.test(line)) return false;
+  if (/Deleting original file/i.test(line)) return false;
+  if (/^ERROR:/i.test(line)) return true;
+  if (/^WARNING:/i.test(line) && /unable|nsig|signature/i.test(line)) return true;
+  if (/\[download\]\s+Destination:/.test(line)) return true;
+  if (/\[Merger\]/.test(line) || /\[ExtractAudio\]/.test(line)) return true;
+  if (/\[ffmpeg\] Destination:/.test(line)) return true;
+  return false;
+}
+
+function userFacingError(log) {
+  if (isYoutubeForbidden(log)) {
+    return 'YouTube video akışı reddedildi (403). Bağlantıyı tekrar dene; motor güncel değilse arka planda yenilenir.';
+  }
+  return extractErrorMessage(log);
 }
 
 function extractSavedLabel(log) {
@@ -250,25 +366,7 @@ function buildDownloadCommand(url, format) {
     twitter: isTwitter
   });
 
-  if (format === 'bestaudio') {
-    args.push('-f', 'bestaudio', '-x', '--audio-format', 'mp3');
-  } else if (format === 'yt-wav') {
-    args.push('-f', 'bestaudio', '-x', '--audio-format', 'wav');
-  } else if (format === 'yt-prores') {
-    args.push('-f', YT_4K_SOURCE_FORMAT, '-S', 'res:2160');
-    args.push('--merge-output-format', 'mov');
-    args.push('--postprocessor-args', 'ffmpeg:-c:v prores_ks -profile:v 3 -pix_fmt yuv422p10le -c:a pcm_s16le');
-  } else if (format === 'yt-4k-avc1') {
-    args.push('-f', YT_4K_SOURCE_FORMAT, '-S', 'res:2160');
-    appendNleCompatArgs(args);
-  } else if (isTwitter) {
-    args.push('-f', TW_NLE_FORMAT);
-    appendNleCompatArgs(args);
-  } else {
-    const selected = format && format !== 'best' ? format : YT_NLE_FORMAT;
-    args.push('-f', selected);
-    appendNleCompatArgs(args);
-  }
+  applyFormatArgs(args, format, { isTwitter });
   args.push(urlTrimmed);
 
   return { ytDlpPath, args };
@@ -277,7 +375,7 @@ function buildDownloadCommand(url, format) {
 const RE_PROGRESS = /(\d{1,3}\.\d+)%\s+of\s+~?\s*([\d.]+\s*\S+)\s+at\s+([\d.]+\s*\S+)(?:\s+ETA\s+(\d{2}:\d{2}))?/;
 const RE_PROGRESS_DONE = /100%\s+of\s+~?\s*([\d.]+\s*\S+)/;
 
-function spawnDownload(sender, url, format) {
+function spawnDownload(sender, url, format, { retriedAfterUpdate = false } = {}) {
   const { ytDlpPath, args } = buildDownloadCommand(url, format);
   console.log('YT-DLP:', ytDlpPath, args.join(' '));
 
@@ -294,6 +392,7 @@ function spawnDownload(sender, url, format) {
     paused: false,
     pausing: false,
     cancelled: false,
+    retriedAfterUpdate,
     logAcc: '',
     lastLogLine: '',
     lastPercent: -1,
@@ -340,9 +439,16 @@ function spawnDownload(sender, url, format) {
         sender.send('download-phase', 'analyzing');
       }
 
-      if (!RE_PROGRESS.test(trimmed) && !RE_PROGRESS_DONE.test(trimmed) && trimmed !== session.lastLogLine) {
+      if (
+        !RE_PROGRESS.test(trimmed) &&
+        !RE_PROGRESS_DONE.test(trimmed) &&
+        trimmed !== session.lastLogLine &&
+        shouldSendLogLine(trimmed)
+      ) {
+        const display = cleanLogLine(trimmed);
+        if (!display) continue;
         session.lastLogLine = trimmed;
-        sender.send('download-log', trimmed);
+        sender.send('download-log', display);
       }
     }
   }
@@ -375,20 +481,39 @@ function spawnDownload(sender, url, format) {
       return;
     }
 
-    activeDownload = null;
-
     if (session.cancelled) {
+      activeDownload = null;
       cleanupPartFiles(session.logAcc);
       sender.send('download-cancelled');
       return;
     }
 
     if (code === 0) {
+      activeDownload = null;
       const label = extractSavedLabel(session.logAcc) || 'Dosya';
       sender.send('download-complete', label);
+    } else if (
+      isYoutubeForbidden(session.logAcc) &&
+      !session.retriedAfterUpdate
+    ) {
+      session.proc = null;
+      sender.send('download-log', 'YouTube kısıtlaması algılandı. İndirme motoru güncellenip yeniden denenecek.');
+      sender.send('download-phase', 'analyzing');
+      binariesManager.selfUpdateYtDlp({ forceDownload: true })
+        .catch(() => false)
+        .then(() => {
+          if (session.cancelled) {
+            if (activeDownload === session) activeDownload = null;
+            cleanupPartFiles(session.logAcc);
+            sender.send('download-cancelled');
+            return;
+          }
+          if (activeDownload !== session) return;
+          spawnDownload(sender, url, format, { retriedAfterUpdate: true });
+        });
     } else {
-      const errTail = extractErrorMessage(session.logAcc);
-      sender.send('download-error', errTail || `yt-dlp çıkış kodu: ${code}`);
+      activeDownload = null;
+      sender.send('download-error', userFacingError(session.logAcc) || `yt-dlp çıkış kodu: ${code}`);
     }
   });
 
@@ -503,6 +628,12 @@ app.whenReady().then(async () => {
   loadLicenseState();
   await checkAndDownloadBinaries();
   createWindow();
+  binariesManager.selfUpdateYtDlp().catch((err) => {
+    console.warn('yt-dlp arka plan guncellemesi:', err.message);
+  });
+  binariesManager.ensureDeno().catch((err) => {
+    console.warn('Deno arka plan indirmesi:', err.message);
+  });
 
   ipcMain.handle('license:check', () => getLicenseSnapshot());
 
@@ -594,9 +725,9 @@ app.whenReady().then(async () => {
       return;
     }
 
-    if (activeDownload?.proc) {
+    if (activeDownload) {
       activeDownload.cancelled = true;
-      killProcessTree(activeDownload.proc);
+      if (activeDownload.proc) killProcessTree(activeDownload.proc);
     }
     activeDownload = null;
 

@@ -591,7 +591,7 @@
   <h3>YouTube Video İndir</h3>
   <input type="text" id="yturl" placeholder="YouTube video linkini yapıştır" />
   <select id="format">
-    <option value="bestvideo[height<=1080][vcodec^=avc1]+bestaudio[ext=m4a]/bestvideo[height<=1080][vcodec^=avc1]+bestaudio/best[vcodec^=avc1]/best">1080p MP4 H.264 (Premiere / After Effects)</option>
+    <option value="yt-1080-avc1">1080p MP4 H.264 (Premiere / After Effects)</option>
     <option value="bestaudio">Sadece Ses (MP3)</option>
     <option value="yt-4k-avc1" data-pro="1">4K MP4 H.264 (Pro) 🔒</option>
     <option value="yt-prores" data-pro="1">Apple ProRes 422 HQ (Pro) 🔒</option>
@@ -999,7 +999,7 @@
       showPanel();
       resetPanel();
       showControls();
-      ipcRenderer.send('start-ytdlp', url, 'bestvideo+bestaudio/best');
+      ipcRenderer.send('start-ytdlp', url, 'yt-1080-avc1');
     }
 
     function startDownloadYT() {
@@ -1054,7 +1054,9 @@
     });
 
     ipcRenderer.on('download-log', (_e, line) => {
-      logLine(line, 'dim');
+      const text = String(line || '').replace(/\[info\]\s*/gi, '').trim();
+      if (!text || /^\[(debug|youtube|twitter|x|generic)\]/i.test(text)) return;
+      logLine(text, 'dim');
     });
 
     ipcRenderer.on('download-paused', () => {
@@ -1095,8 +1097,9 @@
     });
 
     ipcRenderer.on('download-error', (_e, message) => {
-      setStatus(`Hata: ${message}`, 'error');
-      logLine(`Hata: ${message}`, 'err');
+      const text = String(message || '').replace(/\[info\]\s*/gi, '').trim();
+      setStatus(`Hata: ${text}`, 'error');
+      logLine(`Hata: ${text}`, 'err');
       unlockBtns();
     });
   </script>
