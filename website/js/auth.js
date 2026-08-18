@@ -212,9 +212,30 @@
     }
   }
 
+  async function refreshLicense(user) {
+    if (!user || !user.email) return user;
+    try {
+      const res = await fetch('/api/auth/license', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+        body: JSON.stringify({ email: user.email })
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data.success) return user;
+      const next = { ...user, isPro: Boolean(data.isPro) };
+      saveUser(next);
+      renderUser(next);
+      return next;
+    } catch {
+      return user;
+    }
+  }
+
   if (btnSignOut) btnSignOut.addEventListener('click', signOut);
 
-  renderUser(readUser());
+  const existing = readUser();
+  renderUser(existing);
+  refreshLicense(existing);
 
   fetchClientId()
     .then(initGoogle)
