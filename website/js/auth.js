@@ -2,6 +2,7 @@
   const STORAGE_KEY = 'mediapull.auth.user';
   const NONCE_KEY = 'mediapull.auth.nonce';
   const AUTH_ENDPOINT = '/api/auth/google';
+  const FALLBACK_CLIENT_ID = '692852964677-rtuf4dqbiee6855dkn5icmash15e34s7.apps.googleusercontent.com';
 
   const authSlot = document.getElementById('authSlot');
   const signedOut = document.getElementById('authSignedOut');
@@ -77,12 +78,16 @@
   }
 
   async function fetchClientId() {
-    const res = await fetch(AUTH_ENDPOINT, { method: 'GET', headers: { Accept: 'application/json' } });
-    if (!res.ok) throw new Error('config_failed');
-    const data = await res.json();
-    const clientId = data && data.clientId;
-    if (!clientId) throw new Error('missing_client_id');
-    return clientId;
+    try {
+      const res = await fetch(AUTH_ENDPOINT, { method: 'GET', headers: { Accept: 'application/json' } });
+      if (res.ok) {
+        const data = await res.json();
+        if (data && data.clientId) return data.clientId;
+      }
+    } catch {
+      /* statik önizlemede API yok; public client id ile buton yine açılır */
+    }
+    return FALLBACK_CLIENT_ID;
   }
 
   function whenGoogleReady() {

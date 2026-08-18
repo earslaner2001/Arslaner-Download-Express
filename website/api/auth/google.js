@@ -2,6 +2,8 @@ const { OAuth2Client } = require('google-auth-library');
 const { lookupProStatus } = require('../../lib/license');
 
 const googleClient = new OAuth2Client();
+const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID
+  || '692852964677-rtuf4dqbiee6855dkn5icmash15e34s7.apps.googleusercontent.com';
 
 function setCors(res) {
   res.setHeader('Cache-Control', 'no-store');
@@ -43,7 +45,7 @@ module.exports = async function handler(req, res) {
   if (req.method === 'GET') {
     res.status(200).json({
       success: true,
-      clientId: process.env.GOOGLE_CLIENT_ID || ''
+      clientId: GOOGLE_CLIENT_ID
     });
     return;
   }
@@ -54,7 +56,7 @@ module.exports = async function handler(req, res) {
     return;
   }
 
-  const clientId = process.env.GOOGLE_CLIENT_ID;
+  const clientId = GOOGLE_CLIENT_ID;
   if (!clientId) {
     res.status(500).json({ success: false, error: 'server_misconfigured' });
     return;
