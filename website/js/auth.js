@@ -3,6 +3,18 @@
   const NONCE_KEY = 'mediapull.auth.nonce';
   const AUTH_ENDPOINT = '/api/auth/google';
   const FALLBACK_CLIENT_ID = '692852964677-rtuf4dqbiee6855dkn5icmash15e34s7.apps.googleusercontent.com';
+  const GSI_BUTTON = {
+    theme: 'filled_black',
+    size: 'medium',
+    type: 'standard',
+    shape: 'pill',
+    text: 'signin_with',
+    logo_alignment: 'left',
+    locale: 'tr'
+  };
+
+  let googleClientId = FALLBACK_CLIENT_ID;
+  let authGeneration = 0;
 
   const authSlot = document.getElementById('authSlot');
   const signedOut = document.getElementById('authSignedOut');
@@ -111,6 +123,18 @@
     });
   }
 
+  function gsi() {
+    return window.google && google.accounts && google.accounts.id ? google.accounts.id : null;
+  }
+
+  function renderGoogleButton() {
+    const id = gsi();
+    const buttonHost = document.getElementById('g_id_signin');
+    if (!id || !buttonHost) return;
+    buttonHost.innerHTML = '';
+    id.renderButton(buttonHost, GSI_BUTTON);
+  }
+
   async function handleCredentialResponse(response) {
     showError('');
     const credential = response && response.credential;
@@ -136,11 +160,11 @@
         };
         throw new Error(map[data.error] || 'Giriş başarısız.');
       }
+      authGeneration += 1;
       saveUser(data.user);
       renderUser(data.user);
-      if (window.google && google.accounts && google.accounts.id) {
-        google.accounts.id.cancel();
-      }
+      const id = gsi();
+      if (id) id.cancel();
     } catch (err) {
       showError(err instanceof Error ? err.message : 'Giriş başarısız.');
     }
@@ -162,12 +186,13 @@
   }
 
   async function initGoogle(clientId) {
+    googleClientId = clientId;
     await whenGoogleReady();
     const nonce = randomNonce();
     sessionStorage.setItem(NONCE_KEY, nonce);
     bindOnload(clientId);
 
-    google.accounts.id.initialize({
+    gsi().initialize({
       client_id: clientId,
       callback: handleCredentialResponse,
       nonce,
@@ -179,40 +204,31 @@
       use_fedcm_for_prompt: true
     });
 
-    const buttonHost = document.getElementById('g_id_signin');
-    if (buttonHost) {
-      buttonHost.innerHTML = '';
-      google.accounts.id.renderButton(buttonHost, {
-        theme: 'filled_black',
-        size: 'medium',
-        type: 'standard',
-        shape: 'pill',
-        text: 'signin_with',
-        logo_alignment: 'left',
-        locale: 'tr'
-      });
-    }
+    renderGoogleButton();
 
     if (!readUser()) {
-      google.accounts.id.prompt();
+      gsi().prompt();
     }
   }
 
   function signOut() {
-    const user = readUser();
+    authGeneration += 1;
     clearUser();
     renderUser(null);
     showError('');
-    if (window.google && google.accounts && google.accounts.id) {
-      google.accounts.id.disableAutoSelect();
-      if (user && user.email && typeof google.accounts.id.revoke === 'function') {
-        google.accounts.id.revoke(user.email, () => {});
-      }
-      google.accounts.id.prompt();
+
+    const id = gsi();
+    if (id) {
+      try { id.cancel(); } catch (_) {}
+      try { id.disableAutoSelect(); } catch (_) {}
     }
+
+    requestAnimationFrame(function () {
+      renderGoogleButton();
+    });
   }
 
-  async function refreshLicense(user) {
+  async function refreshLicense(user, generation) {
     if (!user || !user.email) return user;
     try {
       const res = await fetch('/api/auth/license', {
@@ -221,6 +237,8 @@
         body: JSON.stringify({ email: user.email })
       });
       const data = await res.json().catch(() => ({}));
+      if (generation !== authGeneration) return user;
+      if (!readUser() || readUser().email !== user.email) return user;
       if (!res.ok || !data.success) return user;
       const next = { ...user, isPro: Boolean(data.isPro) };
       saveUser(next);
@@ -235,7 +253,7 @@
 
   const existing = readUser();
   renderUser(existing);
-  refreshLicense(existing);
+  refreshLicense(existing, authGeneration);
 
   fetchClientId()
     .then(initGoogle)

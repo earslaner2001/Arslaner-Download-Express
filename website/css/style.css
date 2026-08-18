@@ -144,6 +144,12 @@ code {
   display: flex;
   align-items: center;
   min-height: 40px;
+  position: relative;
+}
+
+#authSignedOut[hidden],
+#authSignedIn[hidden] {
+  display: none !important;
 }
 
 .gsi-btn {
