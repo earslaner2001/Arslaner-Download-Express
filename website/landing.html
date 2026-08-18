@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>MediaPull Pro — Editor-Ready Downloads</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            ember: { 400: '#ff5a5a', 500: '#ff2a2a', 700: '#991111' },
+            ink: { 50: '#f6f4f2', 900: '#0c0b0d', 800: '#161418' }
+          },
+          fontFamily: {
+            sans: ['"Segoe UI"', 'system-ui', 'sans-serif'],
+            mono: ['ui-monospace', 'Consolas', 'monospace']
+          }
+        }
+      }
+    };
+  </script>
+  <style>
+    :root { color-scheme: dark; }
+    html[data-theme="light"] { color-scheme: light; }
+    html { scroll-behavior: smooth; }
+    body { margin: 0; }
+    .grain {
+      pointer-events: none;
+      position: fixed;
+      inset: 0;
+      opacity: .045;
+      z-index: 0;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    }
+    .reveal { opacity: 0; transform: translateY(18px); animation: rise .7s ease forwards; }
+    .reveal:nth-child(2) { animation-delay: .08s; }
+    .reveal:nth-child(3) { animation-delay: .16s; }
+    @keyframes rise { to { opacity: 1; transform: none; } }
+    @keyframes pulseBar { 0%,100% { width: 62%; } 50% { width: 86%; } }
+    .bar { animation: pulseBar 3.6s ease-in-out infinite; }
+    .timeline {
+      background-image: repeating-linear-gradient(90deg, transparent, transparent 11px, rgba(255,42,42,.18) 11px, rgba(255,42,42,.18) 12px);
+    }
+    html[data-theme="light"] .timeline {
+      background-image: repeating-linear-gradient(90deg, transparent, transparent 11px, rgba(153,17,17,.12) 11px, rgba(153,17,17,.12) 12px);
+    }
+    .modal[hidden] { display: none !important; }
+    .modal { position: fixed; inset: 0; z-index: 80; display: grid; place-items: center; background: rgba(0,0,0,.62); padding: 1rem; }
+    :focus-visible { outline: 2px solid #ff2a2a; outline-offset: 3px; }
+  </style>
+</head>
+<body class="bg-ink-900 text-zinc-100 dark:bg-ink-900">
+  <div class="grain" aria-hidden="true"></div>
+
+  <a href="#buy" class="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-lg focus:bg-ember-500 focus:px-3 focus:py-2 focus:text-white">Skip to buy</a>
+
+  <header class="relative z-10 mx-auto flex max-w-6xl items-center justify-between gap-4 px-5 py-5">
+    <div class="flex items-center gap-2 font-mono text-sm tracking-widest text-ember-400">
+      <span class="inline-block h-2.5 w-2.5 rounded-sm bg-ember-500 shadow-[0_0_12px_#ff2a2a]"></span>
+      MediaPull
+    </div>
+    <nav class="hidden items-center gap-6 text-sm text-zinc-400 sm:flex" aria-label="Page">
+      <a href="#features" class="hover:text-white">Features</a>
+      <a href="#compare" class="hover:text-white">Free vs Pro</a>
+      <a href="#faq" class="hover:text-white">FAQ</a>
+    </nav>
+    <div class="flex items-center gap-2">
+      <button type="button" id="themeToggle" class="rounded-lg border border-white/10 px-3 py-1.5 text-xs text-zinc-300 hover:border-ember-500/50" aria-pressed="true" aria-label="Toggle color theme">Light</button>
+      <a data-gumroad-action="buy" class="cursor-pointer rounded-lg bg-gradient-to-r from-ember-500 to-ember-700 px-4 py-2 text-sm font-semibold text-white shadow-[0_8px_24px_rgba(255,42,42,.28)]">Get Pro</a>
+    </div>
+  </header>
+
+  <main class="relative z-10">
+    <section class="mx-auto grid max-w-6xl items-center gap-12 px-5 pb-20 pt-8 lg:grid-cols-2 lg:pt-14">
+      <div>
+        <p class="reveal mb-4 inline-flex items-center gap-2 rounded-full border border-ember-500/30 bg-ember-500/10 px-3 py-1 font-mono text-xs text-ember-400">
+          Lifetime license · 2 devices · 14-day refund
+        </p>
+        <h1 class="reveal text-4xl font-extrabold leading-tight tracking-tight sm:text-5xl" data-gumroad-field="name">MediaPull Pro License</h1>
+        <p class="reveal mt-4 max-w-xl text-lg text-zinc-400">
+          Paste a YouTube or X link. Get Premiere / After Effects–ready H.264 — no black frames, no mystery codecs.
+        </p>
+        <p class="mt-3 max-w-xl text-sm text-zinc-500" data-gumroad-field="description">Unlock 4K, ProRes 422 HQ, lossless WAV, and batch downloads.</p>
+        <div class="mt-8 flex flex-wrap items-end gap-4">
+          <button type="button" data-gumroad-action="buy" class="cursor-pointer rounded-xl bg-gradient-to-r from-ember-500 to-ember-700 px-6 py-3 text-base font-semibold text-white shadow-[0_10px_32px_rgba(255,42,42,.35)]">
+            Unlock Pro —
+            <span data-gumroad-field="price">$4.99</span>
+          </button>
+          <p class="text-sm text-zinc-500">One payment. Yours to keep.</p>
+        </div>
+        <p class="mt-4 text-xs text-zinc-500" data-gumroad-field="rating">Be the first to review</p>
+        <p class="text-xs text-zinc-600" data-gumroad-field="review-count">Be the first to review</p>
+      </div>
+
+      <div class="reveal rounded-2xl border border-red-900/40 bg-zinc-950/80 p-4 shadow-[0_24px_80px_rgba(0,0,0,.45)]" aria-hidden="true">
+        <div class="mb-3 flex items-center gap-2">
+          <span class="h-2.5 w-2.5 rounded-full bg-ember-500"></span>
+          <span class="h-2.5 w-2.5 rounded-full bg-amber-400"></span>
+          <span class="h-2.5 w-2.5 rounded-full bg-emerald-400"></span>
+          <span class="ml-auto font-mono text-[10px] text-ember-400">NLE · H.264 yuv420p</span>
+        </div>
+        <svg viewBox="0 0 420 240" class="w-full" role="img" aria-label="MediaPull exporting editor-ready MP4">
+          <rect width="420" height="240" rx="12" fill="#121214"/>
+          <rect x="18" y="42" width="384" height="28" rx="6" fill="#1c1c20"/>
+          <rect x="18" y="80" width="384" height="36" rx="8" fill="url(#g)"/>
+          <rect x="18" y="132" width="384" height="10" rx="5" fill="#222"/>
+          <rect class="bar" x="18" y="132" width="250" height="10" rx="5" fill="#ff2a2a"/>
+          <g class="timeline" transform="translate(18,168)">
+            <rect width="384" height="48" rx="6" fill="#0e0e11"/>
+            <rect x="12" y="12" width="90" height="24" rx="4" fill="#ff2a2a"/>
+            <rect x="110" y="12" width="140" height="24" rx="4" fill="#5a1515"/>
+            <rect x="258" y="12" width="70" height="24" rx="4" fill="#2a2a32"/>
+          </g>
+          <defs>
+            <linearGradient id="g" x1="0" y1="0" x2="1" y2="0">
+              <stop stop-color="#ff2a2a"/><stop offset="1" stop-color="#991111"/>
+            </linearGradient>
+          </defs>
+        </svg>
+        <p class="mt-2 font-mono text-[10px] text-zinc-500">YouTube → timeline · 4K H.264 · ProRes · WAV</p>
+      </div>
+    </section>
+
+    <section id="features" class="border-t border-white/5 bg-black/20 py-16">
+      <div class="mx-auto max-w-6xl px-5">
+        <h2 class="text-2xl font-bold sm:text-3xl">Built for the timeline, not the browser</h2>
+        <div class="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <article class="rounded-2xl border border-white/10 bg-white/5 p-5">
+            <p class="font-mono text-xs text-ember-400">4K</p>
+            <h3 class="mt-2 font-semibold">4K H.264 + AAC</h3>
+            <p class="mt-2 text-sm text-zinc-400">yuv420p MP4 that Premiere, AE, and Resolve actually display.</p>
+          </article>
+          <article class="rounded-2xl border border-white/10 bg-white/5 p-5">
+            <p class="font-mono text-xs text-ember-400">NLE</p>
+            <h3 class="mt-2 font-semibold">Apple ProRes 422 HQ</h3>
+            <p class="mt-2 text-sm text-zinc-400">Edit-ready color, no transcode roulette after download.</p>
+          </article>
+          <article class="rounded-2xl border border-white/10 bg-white/5 p-5">
+            <p class="font-mono text-xs text-ember-400">WAV</p>
+            <h3 class="mt-2 font-semibold">Lossless audio</h3>
+            <p class="mt-2 text-sm text-zinc-400">Studio WAV and 320kbps MP3 when you only need the stem.</p>
+          </article>
+          <article class="rounded-2xl border border-white/10 bg-white/5 p-5">
+            <p class="font-mono text-xs text-ember-400">BATCH</p>
+            <h3 class="mt-2 font-semibold">Batch + max speed</h3>
+            <p class="mt-2 text-sm text-zinc-400">Queue multiple jobs instead of babysitting one tab at a time.</p>
+          </article>
+          <article class="rounded-2xl border border-white/10 bg-white/5 p-5">
+            <p class="font-mono text-xs text-ember-400">2×</p>
+            <h3 class="mt-2 font-semibold">Two machines</h3>
+            <p class="mt-2 text-sm text-zinc-400">Studio PC and laptop. Same license. Same Pro formats.</p>
+          </article>
+          <article class="rounded-2xl border border-white/10 bg-white/5 p-5">
+            <p class="font-mono text-xs text-ember-400">WIN</p>
+            <h3 class="mt-2 font-semibold">Windows desktop</h3>
+            <p class="mt-2 text-sm text-zinc-400">yt-dlp + ffmpeg bundled. Files land locally — not on our servers.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section id="compare" class="mx-auto max-w-6xl px-5 py-16">
+      <h2 class="text-2xl font-bold">Free gets you started. Pro finishes the cut.</h2>
+      <div class="mt-8 overflow-x-auto rounded-2xl border border-white/10">
+        <table class="w-full min-w-[32rem] text-left text-sm">
+          <thead class="bg-white/5 text-zinc-400">
+            <tr>
+              <th class="px-4 py-3 font-medium">Capability</th>
+              <th class="px-4 py-3 font-medium">Free</th>
+              <th class="px-4 py-3 font-medium text-ember-400">Pro</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-white/5">
+            <tr><td class="px-4 py-3">YouTube + X downloads</td><td class="px-4 py-3">Yes</td><td class="px-4 py-3">Yes</td></tr>
+            <tr><td class="px-4 py-3">1080p Editor-Ready H.264</td><td class="px-4 py-3">Yes</td><td class="px-4 py-3">Yes</td></tr>
+            <tr><td class="px-4 py-3">4K H.264</td><td class="px-4 py-3 text-zinc-500">—</td><td class="px-4 py-3">Yes</td></tr>
+            <tr><td class="px-4 py-3">ProRes 422 HQ</td><td class="px-4 py-3 text-zinc-500">—</td><td class="px-4 py-3">Yes</td></tr>
+            <tr><td class="px-4 py-3">Lossless WAV / 320kbps</td><td class="px-4 py-3 text-zinc-500">—</td><td class="px-4 py-3">Yes</td></tr>
+            <tr><td class="px-4 py-3">Batch / max throughput</td><td class="px-4 py-3 text-zinc-500">—</td><td class="px-4 py-3">Yes</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="buy" class="border-y border-white/5 bg-gradient-to-b from-ember-700/10 to-transparent py-16">
+      <div class="mx-auto max-w-xl px-5 text-center">
+        <p class="font-mono text-xs uppercase tracking-[0.2em] text-ember-400">Checkout</p>
+        <h2 class="mt-2 text-3xl font-extrabold">Pay once. Edit in 4K.</h2>
+        <p class="mt-3 text-zinc-400">Activate the key inside MediaPull. Valid on 2 devices. 14-day money-back guarantee.</p>
+        <p class="mt-8 font-mono text-5xl font-bold tracking-tight" data-gumroad-field="price">$4.99</p>
+        <p class="mt-1 text-sm text-zinc-500">Lifetime · not a subscription</p>
+        <a data-gumroad-action="buy" class="mt-8 inline-flex cursor-pointer items-center justify-center rounded-xl bg-gradient-to-r from-ember-500 to-ember-700 px-8 py-3.5 text-lg font-semibold text-white shadow-[0_12px_40px_rgba(255,42,42,.4)]">I want this</a>
+        <p class="mt-4 text-xs text-zinc-500">Windows 10 / 11 · license delivered after payment</p>
+        <button type="button" id="openHow" class="mt-6 text-sm text-zinc-400 underline-offset-4 hover:text-white hover:underline">How activation works</button>
+      </div>
+    </section>
+
+    <section id="faq" class="mx-auto max-w-3xl px-5 py-16">
+      <h2 class="text-2xl font-bold">Questions</h2>
+      <div class="mt-6 space-y-3">
+        <details class="rounded-xl border border-white/10 bg-white/5 p-4">
+          <summary class="cursor-pointer font-medium">Is this monthly or lifetime?</summary>
+          <p class="mt-2 text-sm text-zinc-400">This Gumroad product is a one-time Pro license. After checkout you receive a key for 2 devices.</p>
+        </details>
+        <details class="rounded-xl border border-white/10 bg-white/5 p-4">
+          <summary class="cursor-pointer font-medium">Where do I paste the key?</summary>
+          <p class="mt-2 text-sm text-zinc-400">Open MediaPull → Pro badge → paste the license → activate. 4K / ProRes / WAV unlock immediately.</p>
+        </details>
+        <details class="rounded-xl border border-white/10 bg-white/5 p-4">
+          <summary class="cursor-pointer font-medium">Can I refund?</summary>
+          <p class="mt-2 text-sm text-zinc-400">Yes — 14-day money-back guarantee on this product.</p>
+        </details>
+      </div>
+    </section>
+  </main>
+
+  <footer class="relative z-10 mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-5 py-8 text-xs text-zinc-500">
+    <p>MediaPull Pro · Windows</p>
+    <a href="https://earslaner2001.gumroad.com">More from this creator</a>
+    <a href="https://github.com/earslaner2001/Arslaner-Download-Express/releases/latest" target="_blank" rel="noopener noreferrer">Download the free app</a>
+  </footer>
+
+  <div class="modal" id="howModal" hidden role="dialog" aria-modal="true" aria-labelledby="howTitle">
+    <div class="max-w-md rounded-2xl border border-white/10 bg-zinc-950 p-6 text-zinc-200 shadow-2xl">
+      <h3 id="howTitle" class="text-lg font-semibold">Activate in 30 seconds</h3>
+      <ol class="mt-3 list-decimal space-y-2 pl-5 text-sm text-zinc-400">
+        <li>Buy Pro on this page.</li>
+        <li>Copy the license key from your Gumroad receipt.</li>
+        <li>In MediaPull, open the Pro panel and paste it.</li>
+      </ol>
+      <div class="mt-5 flex justify-end gap-2">
+        <button type="button" id="closeHow" class="rounded-lg border border-white/15 px-3 py-1.5 text-sm">Close</button>
+        <button type="button" data-gumroad-action="buy" class="cursor-pointer rounded-lg bg-ember-500 px-3 py-1.5 text-sm font-semibold text-white">Buy Pro</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      var root = document.documentElement;
+      var toggle = document.getElementById('themeToggle');
+      function apply(theme) {
+        root.setAttribute('data-theme', theme);
+        root.classList.toggle('dark', theme === 'dark');
+        root.classList.toggle('light', theme === 'light');
+        if (theme === 'light') {
+          document.body.className = 'bg-ink-50 text-zinc-900';
+          toggle.textContent = 'Dark';
+          toggle.setAttribute('aria-pressed', 'false');
+        } else {
+          document.body.className = 'bg-ink-900 text-zinc-100';
+          toggle.textContent = 'Light';
+          toggle.setAttribute('aria-pressed', 'true');
+        }
+      }
+      apply(window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
+      toggle.addEventListener('click', function () {
+        apply(root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark');
+      });
+
+      var modal = document.getElementById('howModal');
+      document.getElementById('openHow').addEventListener('click', function () { modal.hidden = false; });
+      document.getElementById('closeHow').addEventListener('click', function () { modal.hidden = true; });
+      modal.addEventListener('click', function (e) { if (e.target === modal) modal.hidden = true; });
+      document.addEventListener('keydown', function (e) { if (e.key === 'Escape') modal.hidden = true; });
+    })();
+  </script>
+</body>
+</html>

@@ -19,7 +19,7 @@ let activeDownload = null;
 const binariesManager = new BinariesManager();
 
 const LICENSE_API = 'http://194.105.5.6:3000';
-const LICENSE_STORE_URL = 'https://mediapull.lemonsqueezy.com';
+const LICENSE_STORE_URL = 'https://earslaner2001.gumroad.com/l/mediapull-pro';
 const PRO_FORMATS = new Set(['yt-4k-avc1', 'yt-prores', 'yt-wav']);
 let isProUser = false;
 let licenseMasked = '';
