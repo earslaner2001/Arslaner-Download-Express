@@ -1,0 +1,12 @@
+{
+  "name": "mediapull-site",
+  "private": true,
+  "version": "2.2.0",
+  "description": "MediaPull lansman sitesi — Google SSO ve lisans durumu",
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "google-auth-library": "^9.15.1"
+  }
+}

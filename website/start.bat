@@ -11,6 +11,7 @@ echo  MediaPull - lansman sitesi
 echo ============================================
 echo.
 echo Tarayici: http://localhost:3000
+echo Google SSO icin: npx vercel dev  (veya asagida otomatik)
 echo Durdurmak icin bu pencerede Ctrl+C
 echo.
 
@@ -28,5 +29,13 @@ if errorlevel 1 (
   exit /b 0
 )
 
+if exist ".env" (
+  start "" "http://localhost:3000"
+  npx --yes vercel dev --listen 3000
+  exit /b 0
+)
+
+echo UYARI: website\.env yok. Google girisi icin Vercel env veya .env gerekli.
+echo Statik onizleme aciliyor (API yok).
 start "" "http://localhost:3000"
 npx --yes serve . -l 3000

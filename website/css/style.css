@@ -140,6 +140,117 @@ code {
   gap: 0.75rem;
 }
 
+.auth-slot {
+  display: flex;
+  align-items: center;
+  min-height: 40px;
+}
+
+.gsi-btn {
+  min-width: 180px;
+  min-height: 40px;
+}
+
+.gsi-btn iframe {
+  color-scheme: dark;
+}
+
+.user-chip {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  max-width: min(420px, 52vw);
+  padding: 0.2rem 0.35rem 0.2rem 0.25rem;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+}
+
+.user-chip img {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: #222;
+  flex-shrink: 0;
+}
+
+.user-meta {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  line-height: 1.2;
+}
+
+.user-name {
+  font-size: 0.82rem;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.user-email {
+  font-family: var(--mono);
+  font-size: 0.68rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.license-pill {
+  flex-shrink: 0;
+  font-family: var(--mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 0.2rem 0.5rem;
+  color: var(--text-muted);
+}
+
+.license-pill.pro {
+  color: #ffd27a;
+  border-color: rgba(255, 210, 122, 0.45);
+  background: rgba(255, 210, 122, 0.08);
+}
+
+.license-pill.free {
+  color: var(--text-muted);
+}
+
+.btn-signout {
+  flex-shrink: 0;
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-family: var(--display);
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0.35rem 0.55rem;
+}
+
+.btn-signout:hover {
+  color: var(--text);
+}
+
+.auth-error {
+  position: relative;
+  z-index: 2;
+  max-width: var(--max);
+  margin: 0 auto;
+  padding: 0.35rem 1.5rem 0;
+  font-size: 0.82rem;
+  color: #ff8a8a;
+}
+
+body.is-pro .js-buy-cta {
+  display: none;
+}
+
 .nav-toggle {
   display: none;
   flex-direction: column;
@@ -749,6 +860,14 @@ main {
 
   .header-actions .btn-ghost {
     display: none;
+  }
+
+  .user-email {
+    display: none;
+  }
+
+  .gsi-btn {
+    min-width: 140px;
   }
 
   .site-header {

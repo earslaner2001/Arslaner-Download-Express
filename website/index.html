@@ -10,8 +10,17 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/style.css">
+  <link rel="preconnect" href="https://accounts.google.com">
+  <link rel="preconnect" href="https://apis.google.com">
 </head>
 <body>
+  <div id="g_id_onload"
+       data-context="signin"
+       data-ux_mode="popup"
+       data-auto_prompt="false"
+       data-auto_select="false"
+       data-itp_support="true"
+       data-callback="handleCredentialResponse"></div>
   <div class="noise" aria-hidden="true"></div>
   <div class="glow glow-a" aria-hidden="true"></div>
   <div class="glow glow-b" aria-hidden="true"></div>
@@ -28,13 +37,28 @@
       <a href="#indir">İndir</a>
     </nav>
     <div class="header-actions">
-      <a class="btn btn-outline btn-sm" href="https://mediapull.lemonsqueezy.com" target="_blank" rel="noopener noreferrer">Pro'ya geç</a>
+      <a class="btn btn-outline btn-sm js-buy-cta" href="https://mediapull.lemonsqueezy.com" target="_blank" rel="noopener noreferrer">Pro'ya geç</a>
       <a class="btn btn-ghost" href="https://github.com/earslaner2001/MediaPull" target="_blank" rel="noopener noreferrer">GitHub</a>
+      <div class="auth-slot" id="authSlot" data-state="out">
+        <div id="authSignedOut">
+          <div id="g_id_signin" class="gsi-btn" role="button" aria-label="Google ile giriş yap"></div>
+        </div>
+        <div class="user-chip" id="authSignedIn" hidden>
+          <img id="userAvatar" alt="" width="32" height="32" referrerpolicy="no-referrer" hidden>
+          <div class="user-meta">
+            <span class="user-name" id="userName"></span>
+            <span class="user-email" id="userEmail"></span>
+          </div>
+          <span class="license-pill free" id="userLicense">Free</span>
+          <button type="button" class="btn-signout" id="btnSignOut">Çıkış Yap</button>
+        </div>
+      </div>
       <button class="nav-toggle" id="navToggle" aria-label="Menü" aria-expanded="false">
         <span></span><span></span><span></span>
       </button>
     </div>
   </header>
+  <p class="auth-error" id="authError" hidden></p>
 
   <main>
     <section class="hero">
@@ -222,6 +246,8 @@
     </div>
   </footer>
 
-  <script src="js/main.js"></script>
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+  <script src="js/auth.js" defer></script>
+  <script src="js/main.js" defer></script>
 </body>
 </html>
