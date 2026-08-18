@@ -121,17 +121,19 @@
 
   function renderGoogleButton() {
     const id = gsi();
-    if (!id || !btnGoogleSignIn) return;
-    btnGoogleSignIn.disabled = false;
-    if (btnGoogleSignIn.dataset.bound === '1') return;
-    btnGoogleSignIn.dataset.bound = '1';
-    btnGoogleSignIn.addEventListener('click', function () {
-      showError('');
-      try {
-        id.prompt();
-      } catch (_) {
-        showError('Google girişi açılamadı. Sayfayı yenile.');
-      }
+    const host = document.getElementById('g_id_signin');
+    const wrap = host && host.parentElement;
+    if (!id || !host) return;
+    host.innerHTML = '';
+    const width = Math.max(wrap ? wrap.offsetWidth : 0, 200);
+    id.renderButton(host, {
+      theme: 'filled_black',
+      size: 'large',
+      type: 'standard',
+      shape: 'rectangular',
+      text: 'signin_with',
+      locale: 'tr',
+      width
     });
   }
 
@@ -200,15 +202,10 @@
       cancel_on_tap_outside: true,
       context: 'signin',
       ux_mode: 'popup',
-      itp_support: true,
-      use_fedcm_for_prompt: true
+      itp_support: true
     });
 
     renderGoogleButton();
-
-    if (!readUser()) {
-      gsi().prompt();
-    }
   }
 
   function signOut() {
