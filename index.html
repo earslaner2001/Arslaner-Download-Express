@@ -520,11 +520,22 @@
       color: #ffcccc;
       text-shadow: none;
     }
-    button.license-buy:hover {
+    button.license-logout {
+      background: transparent;
+      border: 1px solid rgba(255, 180, 80, 0.45);
+      color: #ffcc88;
+      text-shadow: none;
+    }
+    button.license-logout:hover {
       transform: none;
       box-shadow: none;
-      border-color: rgba(255, 68, 68, 0.75);
+      border-color: #f0c14b;
+      color: #ffe9a8;
     }
+    .license-pro-only { display: none; }
+    body.pro-active .license-pro-only { display: flex; }
+    body.pro-active p.license-pro-only { display: block; }
+    body.pro-active .license-free-only { display: none; }
     .license-msg {
       min-height: 1.2em;
       margin: 8px 0 0;
@@ -632,16 +643,20 @@
     <div class="license-modal" role="dialog" aria-labelledby="licenseTitle">
       <button type="button" class="modal-close" id="btnLicenseClose" aria-label="Kapat">×</button>
       <h3 id="licenseTitle">Lisans Yönetimi / Pro'ya Yükselt</h3>
-      <p class="hint">Pro plan toplu indirme, 4K / ProRes ve maksimum hız kilitlerini açar. Anahtar formatı: MP-PRO-XXXXXX</p>
+      <p class="hint license-free-only">Lisans sunucusundan aldığın anahtarı yapıştır. Bu cihaz otomatik bağlanır (2 cihaz hakkı).</p>
+      <p class="hint license-pro-only">Pro lisans bu cihazda aktif. Çıkış yapınca cihaz hakkı serbest kalır.</p>
       <ul class="pro-list">
         <li>Toplu indirme</li>
         <li>4K MP4 ve Apple ProRes 422 HQ</li>
         <li>Kayıpsız ses (WAV) ve maksimum hız</li>
       </ul>
-      <input type="text" id="license-key" placeholder="Lisans anahtarını yapıştır" autocomplete="off" spellcheck="false" />
-      <div class="license-actions">
+      <input type="text" id="license-key" class="license-free-only" placeholder="Lisans anahtarını yapıştır" autocomplete="off" spellcheck="false" />
+      <div class="license-actions license-free-only">
         <button type="button" class="dl-btn" id="btnLicenseActivate">Doğrula ve Etkinleştir</button>
         <button type="button" class="license-buy" id="btnLicenseBuy">Lisans Satın Al ($4.99/ay)</button>
+      </div>
+      <div class="license-actions license-pro-only">
+        <button type="button" class="license-logout" id="btnLicenseLogout">Pro hesaptan çıkış</button>
       </div>
       <p class="license-msg" id="licenseMsg"></p>
     </div>
@@ -664,6 +679,7 @@
     function applyLicenseUI(state) {
       isProUser = !!state?.isPro;
       if (state?.storeUrl) storeUrl = state.storeUrl;
+      document.body.classList.toggle('pro-active', isProUser);
       const badge = document.getElementById('licenseBadge');
       badge.classList.toggle('pro', isProUser);
       badge.textContent = isProUser ? '[ PRO AKTİF ★ ]' : '[ PRO\'ya Geç ]';
@@ -671,6 +687,10 @@
         opt.textContent = opt.textContent.replace(/\s*🔒$/, '');
         if (!isProUser && !opt.textContent.includes('🔒')) opt.textContent += ' 🔒';
       });
+      if (!isProUser) {
+        const formatEl = document.getElementById('format');
+        if (formatEl.selectedOptions[0]?.dataset.pro === '1') formatEl.selectedIndex = 0;
+      }
     }
 
     function openLicenseModal(message = '', type = '') {
@@ -680,7 +700,7 @@
       const msg = document.getElementById('licenseMsg');
       msg.textContent = message;
       msg.className = 'license-msg' + (type ? ` ${type}` : '');
-      document.getElementById('license-key').focus();
+      document.getElementById('license-key')?.focus();
     }
 
     function closeLicenseModal() {
@@ -714,6 +734,21 @@
       playClick();
       if (api?.openExternal) api.openExternal(storeUrl);
       else shell.openExternal(storeUrl);
+    });
+    document.getElementById('btnLicenseLogout').addEventListener('click', async () => {
+      playClick();
+      const msg = document.getElementById('licenseMsg');
+      const result = await api.licenseLogout();
+      applyLicenseUI(result);
+      if (result?.ok) {
+        msg.textContent = result.warning || 'Pro hesaptan çıkış yapıldı.';
+        msg.className = 'license-msg' + (result.warning ? ' err' : ' ok');
+        logLine('Pro hesaptan çıkış yapıldı.', 'warn');
+        document.getElementById('license-key').value = '';
+      } else {
+        msg.textContent = result?.error || 'Çıkış başarısız.';
+        msg.className = 'license-msg err';
+      }
     });
     document.getElementById('btnLicenseActivate').addEventListener('click', async () => {
       playClick();

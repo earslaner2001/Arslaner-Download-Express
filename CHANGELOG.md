@@ -1,5 +1,39 @@
 # Değişiklik günlüğü
 
+## [2.2.0] — 2026-08-18
+
+### Özet
+
+Pro plan altyapısı, kurgu programı uyumlu H.264 çıktı ve gerçek 4K indirme.
+
+### Eklenenler
+
+- **Pro / Free lisans:** Titlebar rozeti, lisans modalı, anahtar etkinleştirme.
+- **Lisans sunucusu:** `activate` / `deactivate` ile cihaz bağlama; token yerelde saklanır.
+- **Pro hesaptan çıkış:** Cihaz hakkını serbest bırakır.
+- **Pro formatlar:** 4K MP4 H.264, Apple ProRes 422 HQ, kayıpsız WAV (Free’de kilitli).
+
+### İyileştirilenler
+
+- **Editor-Ready MP4:** Video H.264 (`libx264`, `yuv420p`), ses AAC — Premiere / After Effects siyah ekran sorunu.
+- **4K indirme:** YouTube 4K VP9/AV1 kaynağı alınır, ardından H.264 4K’ya dönüştürülür (yalnızca avc1 aramak 1080p’ye düşüyordu).
+- **UTF-8 log:** `--encoding utf-8` ve `toString('utf-8')`.
+
+### Not
+
+- Pro anahtarı lisans sunucusundan üretilir; uygulama mock `MP-PRO-` kabul etmez.
+- 4K yalnızca kaynak videoda 2160p varsa mümkündür.
+
+[2.2.0]: https://github.com/earslaner2001/Arslaner-Download-Express/releases/tag/v2.2.0
+
+## [2.1.1] — 2026-08-18
+
+### Eklenenler
+
+- Özel pencere çerçevesi (küçült / büyüt / kapat, sürükle, çift tık).
+
+[2.1.1]: https://github.com/earslaner2001/Arslaner-Download-Express/releases/tag/v2.1.1
+
 ## [2.0.5] — 2026-06-08
 
 ### Eklenenler — UX İyileştirmeleri

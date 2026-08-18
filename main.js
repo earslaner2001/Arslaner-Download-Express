@@ -3,6 +3,7 @@ const path = require('path');
 const { spawn, exec } = require('child_process');
 const fs = require('fs');
 const os = require('os');
+const crypto = require('crypto');
 const BinariesManager = require('./binaries-manager');
 
 if (process.env.MEDIAPULL_DEV === '1') {
@@ -17,42 +18,108 @@ let mainWindow;
 let activeDownload = null;
 const binariesManager = new BinariesManager();
 
+const LICENSE_API = 'http://194.105.5.6:3000';
 const LICENSE_STORE_URL = 'https://mediapull.lemonsqueezy.com';
 const PRO_FORMATS = new Set(['yt-4k-avc1', 'yt-prores', 'yt-wav']);
 let isProUser = false;
 let licenseMasked = '';
+let licenseToken = '';
+let machineId = '';
 
 function licenseFilePath() {
   return path.join(app.getPath('userData'), 'license.json');
 }
 
+function createMachineId() {
+  const seed = [
+    os.hostname(),
+    os.userInfo().username,
+    os.arch(),
+    os.platform()
+  ].join('|');
+  return crypto.createHash('sha256').update(seed).digest('hex').slice(0, 32);
+}
+
 function loadLicenseState() {
   try {
     const raw = JSON.parse(fs.readFileSync(licenseFilePath(), 'utf8'));
-    isProUser = raw.isPro === true;
+    machineId = typeof raw.machineId === 'string' && raw.machineId
+      ? raw.machineId
+      : createMachineId();
+    licenseToken = typeof raw.token === 'string' ? raw.token : '';
     licenseMasked = typeof raw.masked === 'string' ? raw.masked : '';
+    isProUser = !!licenseToken;
   } catch {
-    isProUser = false;
+    machineId = createMachineId();
+    licenseToken = '';
     licenseMasked = '';
+    isProUser = false;
   }
+  if (!fs.existsSync(licenseFilePath())) saveLicenseState();
 }
 
 function saveLicenseState() {
   fs.writeFileSync(licenseFilePath(), JSON.stringify({
     isPro: isProUser,
+    token: licenseToken,
+    machineId,
     masked: licenseMasked,
     activatedAt: new Date().toISOString()
   }, null, 2), 'utf8');
 }
 
 function maskLicenseKey(key) {
-  const k = key.replace(/\s+/g, '').toUpperCase();
-  if (k.length < 8) return 'MP-PRO-••••';
-  return `${k.slice(0, 7)}••••${k.slice(-2)}`;
+  const k = String(key || '').replace(/\s+/g, '');
+  if (k.length < 8) return '••••';
+  return `${k.slice(0, 4)}••••${k.slice(-4)}`;
 }
 
-function isValidMockLicenseKey(key) {
-  return /^MP-PRO-[A-Z0-9]{6,}$/i.test(String(key || '').trim());
+async function activateLicenseOnServer(licenseKey) {
+  const res = await fetch(`${LICENSE_API}/api/v1/license/activate`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      licenseKey,
+      machineId,
+      product: 'mediapull'
+    })
+  });
+  let data;
+  try {
+    data = await res.json();
+  } catch {
+    throw new Error('Lisans sunucusu geçersiz yanıt verdi.');
+  }
+  if (!data.success) throw new Error(data.message || 'Lisans etkinleştirilemedi.');
+  if (!data.token) throw new Error('Sunucu token döndürmedi.');
+  return data.token;
+}
+
+async function deactivateLicenseOnServer() {
+  if (!licenseToken) return;
+  const res = await fetch(`${LICENSE_API}/api/v1/license/deactivate`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      token: licenseToken,
+      machineId,
+      product: 'mediapull'
+    })
+  });
+  let data;
+  try {
+    data = await res.json();
+  } catch {
+    throw new Error('Lisans sunucusu geçersiz yanıt verdi.');
+  }
+  if (!data.success) throw new Error(data.message || 'Sunucudan çıkış yapılamadı.');
+}
+
+function clearLocalLicense() {
+  licenseToken = '';
+  licenseMasked = '';
+  isProUser = false;
+  saveLicenseState();
 }
 
 function getLicenseSnapshot() {
@@ -109,8 +176,8 @@ function isTwitterOrXUrl(url) {
 
 const YT_NLE_FORMAT =
   'bestvideo[height<=1080][vcodec^=avc1]+bestaudio[ext=m4a]/bestvideo[height<=1080][vcodec^=avc1]+bestaudio/best[vcodec^=avc1]/best';
-const YT_4K_NLE_FORMAT =
-  'bestvideo[height<=2160][vcodec^=avc1]+bestaudio[ext=m4a]/bestvideo[height<=2160][vcodec^=avc1]+bestaudio/best[vcodec^=avc1]/best';
+const YT_4K_SOURCE_FORMAT =
+  'bestvideo[height>=2160]+bestaudio/bestvideo[height>=1440]+bestaudio/bestvideo[height<=2160]+bestaudio/best[height<=2160]/best';
 const TW_NLE_FORMAT =
   'best[protocol=https][vcodec^=avc1][ext=mp4]/best[vcodec^=avc1][ext=mp4]/bestvideo[vcodec^=avc1]+bestaudio[ext=m4a]/bestvideo[vcodec^=avc1]+bestaudio/best[vcodec^=avc1]/best';
 const NLE_FFMPEG_ARGS = 'ffmpeg:-c:v libx264 -pix_fmt yuv420p -preset veryfast -c:a aac -b:a 192k';
@@ -188,14 +255,17 @@ function buildDownloadCommand(url, format) {
   } else if (format === 'yt-wav') {
     args.push('-f', 'bestaudio', '-x', '--audio-format', 'wav');
   } else if (format === 'yt-prores') {
-    args.push('-f', YT_4K_NLE_FORMAT);
+    args.push('-f', YT_4K_SOURCE_FORMAT, '-S', 'res:2160');
     args.push('--merge-output-format', 'mov');
     args.push('--postprocessor-args', 'ffmpeg:-c:v prores_ks -profile:v 3 -pix_fmt yuv422p10le -c:a pcm_s16le');
+  } else if (format === 'yt-4k-avc1') {
+    args.push('-f', YT_4K_SOURCE_FORMAT, '-S', 'res:2160');
+    appendNleCompatArgs(args);
   } else if (isTwitter) {
     args.push('-f', TW_NLE_FORMAT);
     appendNleCompatArgs(args);
   } else {
-    const selected = format === 'yt-4k-avc1' ? YT_4K_NLE_FORMAT : (format && format !== 'best' ? format : YT_NLE_FORMAT);
+    const selected = format && format !== 'best' ? format : YT_NLE_FORMAT;
     args.push('-f', selected);
     appendNleCompatArgs(args);
   }
@@ -436,13 +506,37 @@ app.whenReady().then(async () => {
 
   ipcMain.handle('license:check', () => getLicenseSnapshot());
 
-  ipcMain.handle('license:activate', (_event, key) => {
-    if (!isValidMockLicenseKey(key)) {
-      return { ok: false, error: 'Geçersiz lisans anahtarı. Örnek: MP-PRO-XXXXXX' };
+  ipcMain.handle('license:activate', async (_event, key) => {
+    const licenseKey = String(key || '').trim();
+    if (!licenseKey) {
+      return { ok: false, error: 'Lisans anahtarı gir.' };
     }
-    isProUser = true;
-    licenseMasked = maskLicenseKey(key);
-    saveLicenseState();
+    try {
+      const token = await activateLicenseOnServer(licenseKey);
+      licenseToken = token;
+      isProUser = true;
+      licenseMasked = maskLicenseKey(licenseKey);
+      saveLicenseState();
+      mainWindow?.webContents.send('license:updated', getLicenseSnapshot());
+      return { ok: true, ...getLicenseSnapshot() };
+    } catch (err) {
+      return { ok: false, error: err.message || 'Lisans sunucusuna ulaşılamadı.' };
+    }
+  });
+
+  ipcMain.handle('license:logout', async () => {
+    try {
+      await deactivateLicenseOnServer();
+    } catch (err) {
+      clearLocalLicense();
+      mainWindow?.webContents.send('license:updated', getLicenseSnapshot());
+      return {
+        ok: true,
+        warning: err.message || 'Sunucu çıkışı tamamlanamadı; bu cihazdan Pro kaldırıldı.',
+        ...getLicenseSnapshot()
+      };
+    }
+    clearLocalLicense();
     mainWindow?.webContents.send('license:updated', getLicenseSnapshot());
     return { ok: true, ...getLicenseSnapshot() };
   });
