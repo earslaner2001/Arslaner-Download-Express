@@ -1,35 +1,37 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="920" height="560" viewBox="0 0 920 560" role="img" aria-label="MediaPull app preview">
-  <defs>
-    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%" stop-color="#0c0c0e"/>
-      <stop offset="100%" stop-color="#1a0a0a"/>
-    </linearGradient>
-    <linearGradient id="btn" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%" stop-color="#ff1a1a"/>
-      <stop offset="100%" stop-color="#990000"/>
-    </linearGradient>
-  </defs>
-  <rect width="920" height="560" rx="18" fill="url(#bg)"/>
-  <rect x="18" y="18" width="884" height="524" rx="14" fill="#0c0c0e" stroke="#7a1c1c" stroke-width="1.2"/>
-  <rect x="18" y="18" width="884" height="44" rx="14" fill="#08080a"/>
-  <rect x="18" y="40" width="884" height="22" fill="#08080a"/>
-  <circle cx="44" cy="40" r="6" fill="#ff5f57"/>
-  <circle cx="66" cy="40" r="6" fill="#febc2e"/>
-  <circle cx="88" cy="40" r="6" fill="#28c840"/>
-  <text x="118" y="45" fill="#ff6666" font-family="Segoe UI, Arial, sans-serif" font-size="16" font-weight="700">MediaPull</text>
-  <text x="760" y="45" fill="#c45a5a" font-family="Segoe UI, Arial, sans-serif" font-size="12">Editor-Ready</text>
-  <text x="48" y="104" fill="#ff4c4c" font-family="Segoe UI, Arial, sans-serif" font-size="20" font-weight="700">YouTube / X Video 0ndir</text>
-  <rect x="48" y="124" width="824" height="46" rx="10" fill="#1c1c1e"/>
-  <text x="64" y="153" fill="#ffdddd" font-family="Consolas, monospace" font-size="14">https://youtube.com/watch?v=&</text>
-  <rect x="48" y="186" width="824" height="48" rx="10" fill="url(#btn)"/>
-  <text x="340" y="216" fill="#ffffff" font-family="Segoe UI, Arial, sans-serif" font-size="18" font-weight="700">YouTube'dan 0ndir</text>
-  <text x="48" y="268" fill="#ffaaaa" font-family="Segoe UI, Arial, sans-serif" font-size="14">H.264 yuv420p AAC  Premiere / After Effects</text>
-  <rect x="48" y="286" width="824" height="16" rx="8" fill="#1a1a1a" stroke="#5a1e1e"/>
-  <rect x="48" y="286" width="620" height="16" rx="8" fill="#ff4444"/>
-  <text x="48" y="334" fill="#88ffbb" font-family="Segoe UI, Arial, sans-serif" font-size="14">%75  ·  1080p MP4  ·  NLE uyumlu</text>
-  <rect x="48" y="360" width="824" height="150" rx="10" fill="#050505" stroke="#5a1e1e"/>
-  <text x="64" y="390" fill="#c08080" font-family="Consolas, monospace" font-size="13">[Süreç logu] Analiz ediliyor...</text>
-  <text x="64" y="416" fill="#c08080" font-family="Consolas, monospace" font-size="13">[download] Destination: MediaPullDownloads/clip.mp4</text>
-  <text x="64" y="442" fill="#c08080" font-family="Consolas, monospace" font-size="13">[ffmpeg] libx264 + yuv420p + aac 192k</text>
-  <text x="64" y="468" fill="#88ffbb" font-family="Consolas, monospace" font-size="13">Tamamland1  Premiere/AE siyah ekran yok</text>
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="435" height="350" viewBox="0 0 435 350">
+<defs>
+  <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#111214"/><stop offset="1" stop-color="#17181b"/></linearGradient>
+  <linearGradient id="btn" x1="0" y1="0" x2="1" y2="0"><stop stop-color="#ff3030"/><stop offset="1" stop-color="#b90000"/></linearGradient>
+  <filter id="shadow"><feDropShadow dx="0" dy="4" stdDeviation="8" flood-opacity=".45"/></filter>
+</defs>
+
+<rect width="100%" height="100%" fill="#0b0d0f"/>
+<rect x="29" y="19" width="304" height="315" rx="12" fill="url(#bg)" stroke="#4a1d21" stroke-width="1.5" filter="url(#shadow)"/>
+
+<line x1="30" y1="50" x2="332" y2="50" stroke="#4a1d21"/>
+<circle cx="48" cy="35" r="4" fill="#ff4b4b"/>
+<circle cx="60" cy="35" r="4" fill="#ffbd2e"/>
+<circle cx="72" cy="35" r="4" fill="#28c840"/>
+<text x="272" y="36" fill="#ff3030" font-family="monospace" font-size="9" font-weight="700">MediaPull</text>
+
+<text x="43" y="76" fill="#ff3030" font-family="monospace" font-size="9" font-weight="700">Twitter / X Video &#304;ndir</text>
+<rect x="43" y="84" width="276" height="29" rx="6" fill="#202124"/>
+<text x="50" y="102" fill="#bdbdbd" font-family="monospace" font-size="7.5">https://x.com/i/status/_</text>
+<rect x="43" y="120" width="276" height="28" rx="6" fill="url(#btn)"/>
+<text x="181" y="137" text-anchor="middle" fill="#fff" font-family="monospace" font-size="7.2" font-weight="700">Twitter / X videosunu indir</text>
+
+<text x="43" y="174" fill="#ff3030" font-family="monospace" font-size="9" font-weight="700">YouTube Video &#304;ndir</text>
+<rect x="43" y="187" width="276" height="29" rx="6" fill="#202124"/>
+<text x="50" y="205" fill="#77787a" font-family="monospace" font-size="7.3">YouTube video linkini yap&#305;&#351;t&#305;r</text>
+<rect x="43" y="222" width="276" height="29" rx="6" fill="#202124"/>
+<text x="50" y="240" fill="#c8c8c8" font-family="monospace" font-size="7.3" font-weight="700">1080p MP4 (video + ses)</text>
+<path d="M306 236 l5 5 5-5" fill="none" stroke="#aaa" stroke-width="1.5"/>
+
+<rect x="43" y="257" width="276" height="28" rx="6" fill="url(#btn)"/>
+<text x="181" y="274" text-anchor="middle" fill="#fff" font-family="monospace" font-size="7.2" font-weight="700">YouTube'dan indir</text>
+
+<rect x="43" y="296" width="276" height="4" rx="2" fill="#292a2c"/>
+<rect x="43" y="296" width="199" height="4" rx="2" fill="#ff3030"/>
+<text x="43" y="314" fill="#ddd" font-family="monospace" font-size="7.2" font-weight="700">72% indirildi...</text>
 </svg>
