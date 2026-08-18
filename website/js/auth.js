@@ -3,15 +3,6 @@
   const NONCE_KEY = 'mediapull.auth.nonce';
   const AUTH_ENDPOINT = '/api/auth/google';
   const FALLBACK_CLIENT_ID = '692852964677-rtuf4dqbiee6855dkn5icmash15e34s7.apps.googleusercontent.com';
-  const GSI_BUTTON = {
-    theme: 'filled_black',
-    size: 'medium',
-    type: 'standard',
-    shape: 'pill',
-    text: 'signin_with',
-    logo_alignment: 'left',
-    locale: 'tr'
-  };
 
   let googleClientId = FALLBACK_CLIENT_ID;
   let authGeneration = 0;
@@ -24,6 +15,7 @@
   const userEmail = document.getElementById('userEmail');
   const userLicense = document.getElementById('userLicense');
   const btnSignOut = document.getElementById('btnSignOut');
+  const btnGoogleSignIn = document.getElementById('btnGoogleSignIn');
   const authError = document.getElementById('authError');
 
   function randomNonce() {
@@ -129,10 +121,18 @@
 
   function renderGoogleButton() {
     const id = gsi();
-    const buttonHost = document.getElementById('g_id_signin');
-    if (!id || !buttonHost) return;
-    buttonHost.innerHTML = '';
-    id.renderButton(buttonHost, GSI_BUTTON);
+    if (!id || !btnGoogleSignIn) return;
+    btnGoogleSignIn.disabled = false;
+    if (btnGoogleSignIn.dataset.bound === '1') return;
+    btnGoogleSignIn.dataset.bound = '1';
+    btnGoogleSignIn.addEventListener('click', function () {
+      showError('');
+      try {
+        id.prompt();
+      } catch (_) {
+        showError('Google girişi açılamadı. Sayfayı yenile.');
+      }
+    });
   }
 
   async function handleCredentialResponse(response) {
