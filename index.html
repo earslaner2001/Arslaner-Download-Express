@@ -463,7 +463,7 @@
   <h3>YouTube Video İndir</h3>
   <input type="text" id="yturl" placeholder="YouTube video linkini yapıştır" />
   <select id="format">
-    <option value="bestvideo[height<=1080][ext=mp4]+bestaudio[ext=m4a]/bestvideo[height<=1080]+bestaudio[ext=m4a]/best[height<=1080]">1080p MP4 (video + ses)</option>
+    <option value="bestvideo[height<=1080][vcodec^=avc1]+bestaudio[ext=m4a]/bestvideo[height<=1080][vcodec^=avc1]+bestaudio/best[vcodec^=avc1]/best">1080p MP4 H.264 (Premiere / After Effects)</option>
     <option value="bestaudio">Sadece Ses (MP3)</option>
   </select>
   <button type="button" class="dl-btn" id="btnYT" onclick="playClick(); startDownloadYT()">

@@ -61,12 +61,26 @@ function isTwitterOrXUrl(url) {
   }
 }
 
+const YT_NLE_FORMAT =
+  'bestvideo[height<=1080][vcodec^=avc1]+bestaudio[ext=m4a]/bestvideo[height<=1080][vcodec^=avc1]+bestaudio/best[vcodec^=avc1]/best';
+const TW_NLE_FORMAT =
+  'best[protocol=https][vcodec^=avc1][ext=mp4]/best[vcodec^=avc1][ext=mp4]/bestvideo[vcodec^=avc1]+bestaudio[ext=m4a]/bestvideo[vcodec^=avc1]+bestaudio/best[vcodec^=avc1]/best';
+const NLE_FFMPEG_ARGS = 'ffmpeg:-c:v libx264 -pix_fmt yuv420p -preset veryfast -c:a aac -b:a 192k';
+
+function appendNleCompatArgs(args) {
+  args.push(
+    '--merge-output-format', 'mp4',
+    '--postprocessor-args', NLE_FFMPEG_ARGS
+  );
+}
+
 function buildYtDlpArgs(ffmpegPath, outputTemplate, {
   youtube = false,
   twitter = false
 } = {}) {
   const args = [
     '--ffmpeg-location', ffmpegPath,
+    '--encoding', 'utf-8',
     '--windows-filenames',
     '--continue',
     '--retries', '10',
@@ -124,12 +138,11 @@ function buildDownloadCommand(url, format) {
   if (format === 'bestaudio') {
     args.push('-f', 'bestaudio', '-x', '--audio-format', 'mp3');
   } else if (isTwitter) {
-    args.push(
-      '-f', 'best[protocol=https][ext=mp4]/best[ext=mp4]/bestvideo[ext=mp4]+bestaudio[ext=m4a]/bestvideo+bestaudio/best',
-      '--merge-output-format', 'mp4'
-    );
+    args.push('-f', TW_NLE_FORMAT);
+    appendNleCompatArgs(args);
   } else {
-    args.push('-f', format, '--merge-output-format', 'mp4');
+    args.push('-f', format && format !== 'best' ? format : YT_NLE_FORMAT);
+    appendNleCompatArgs(args);
   }
   args.push(urlTrimmed);
 
@@ -211,10 +224,10 @@ function spawnDownload(sender, url, format) {
 
   sender.send('download-phase', 'analyzing');
 
-  proc.stdout.on('data', (data) => { parseAndSend(data.toString()); });
+  proc.stdout.on('data', (data) => { parseAndSend(data.toString('utf-8')); });
 
   proc.stderr.on('data', (data) => {
-    const text = data.toString();
+    const text = data.toString('utf-8');
     console.error('yt-dlp stderr:', text);
     parseAndSend(text);
   });
