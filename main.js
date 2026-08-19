@@ -180,16 +180,18 @@ const TW_NLE_FORMAT =
 const FMT_1080 =
   'bv*[height<=1080]+ba/b[height<=1080]/bv*+ba/b';
 const FMT_4K =
-  'bestvideo[height=2160]+bestaudio/bestvideo[height<=2160]+bestaudio/bestvideo+bestaudio/best';
+  'bv*[height<=2160]+ba/b[height<=2160]/bv*+ba/b';
 const FMT_PRORES =
-  'bestvideo+bestaudio/best';
+  'bv*+ba/b';
 
+// VideoConvertor args are a single ffmpeg argv string; keep a space after each flag/value
+// (e.g. "-c:v libx264 -pix_fmt yuv420p") so libx264 and pix_fmt never concatenate.
 const PPA_1080 =
-  'VideoConvertor:-c:v libx264 -pix_fmt yuv420p -profile:v high -c:a aac -b:a 192k';
+  'VideoConvertor:-c:v libx264 -pix_fmt yuv420p -profile:v high -level 4.1 -c:a aac -b:a 192k -ar 48000';
 const PPA_4K =
-  'VideoConvertor:-c:v libx264 -pix_fmt yuv420p -profile:v high -c:a aac -b:a 320k';
+  'VideoConvertor:-c:v libx264 -pix_fmt yuv420p -profile:v high -level 5.1 -c:a aac -b:a 320k -ar 48000';
 const PPA_PRORES =
-  'VideoConvertor:-c:v prores_ks -profile:v 3 -vendor apl0 -bits_per_mb 8000 -pix_fmt yuv422p10le -c:a pcm_s16le';
+  'VideoConvertor:-c:v prores_ks -profile:v 3 -vendor apl0 -bits_per_mb 8000 -pix_fmt yuv422p10le -c:a pcm_s16le -ar 48000';
 const PPA_MP3 = 'ExtractAudio:-b:a 256k';
 const PPA_WAV = 'ExtractAudio:-c:a pcm_s16le';
 
@@ -225,19 +227,20 @@ function applyFormatArgs(args, format, { isTwitter = false } = {}) {
     case 'yt-prores':
       args.push('-f', FMT_PRORES);
       args.push('--merge-output-format', 'mov');
+      args.push('--recode-video', 'mov');
       appendVideoPostprocessorArgs(args, PPA_PRORES);
       break;
     case 'yt-4k-avc1':
       args.push('-f', FMT_4K);
       args.push('-S', 'res:2160,fps');
-      args.push('--merge-output-format', 'mp4');
+      args.push('--recode-video', 'mp4');
       appendVideoPostprocessorArgs(args, PPA_4K);
       break;
     case 'yt-1080-avc1':
     default:
       args.push('-f', isTwitter ? TW_NLE_FORMAT : FMT_1080);
       if (!isTwitter) args.push('-S', 'res:1080,fps');
-      args.push('--merge-output-format', 'mp4');
+      args.push('--recode-video', 'mp4');
       appendVideoPostprocessorArgs(args, PPA_1080);
       break;
   }
@@ -330,6 +333,7 @@ function shouldSendLogLine(line) {
   if (/^WARNING:/i.test(line) && /unable|nsig|signature/i.test(line)) return true;
   if (/\[download\]\s+Destination:/.test(line)) return true;
   if (/\[Merger\]/.test(line) || /\[ExtractAudio\]/.test(line)) return true;
+  if (/\[VideoConvertor\]/.test(line)) return true;
   if (/\[ffmpeg\] Destination:/.test(line)) return true;
   return false;
 }
@@ -342,6 +346,10 @@ function userFacingError(log) {
 }
 
 function extractSavedLabel(log) {
+  const convertor = log.match(/\[VideoConvertor\].*Destination:\s*(.+)/);
+  if (convertor) return path.basename(convertor[1].trim());
+  const ffmpeg = log.match(/\[ffmpeg\] Destination:\s*(.+)/);
+  if (ffmpeg) return path.basename(ffmpeg[1].trim());
   const merger = log.match(/\[Merger\] Merging formats into "(.+?)"/);
   if (merger) return path.basename(merger[1]);
   const destLines = [...log.matchAll(/\[download\] Destination:\s*(.+)/g)];
