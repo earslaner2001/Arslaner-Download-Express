@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; media-src 'self'; script-src 'self'; connect-src 'self'">
+  <title>MediaPull</title>
+  <link rel="icon" type="image/x-icon" href="../../icon.ico">
+  <link rel="icon" type="image/png" href="../../icon.png">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="titlebar" id="titlebar">
+    <div class="titlebar-drag">
+      <img class="titlebar-icon" src="../../icon.png" alt="MediaPull" width="20" height="20">
+      <span class="titlebar-title">MediaPull</span>
+    </div>
+    <div class="titlebar-controls">
+      <button type="button" class="license-badge" id="licenseBadge" title="VDS HWID lisans durumu">
+        <span class="dot"></span><span id="licenseBadgeText">Pasif / Ücretsiz</span>
+      </button>
+      <button type="button" class="win-btn" id="btnWinMin" title="Küçült" aria-label="Küçült">
+        <svg viewBox="0 0 10 10"><rect y="4.5" width="10" height="1"/></svg>
+      </button>
+      <button type="button" class="win-btn" id="btnWinMax" title="Büyüt" aria-label="Büyüt">
+        <svg id="iconMaximize" viewBox="0 0 10 10"><rect x="0.5" y="0.5" width="9" height="9" fill="none" stroke="currentColor" stroke-width="1"/></svg>
+        <svg id="iconRestore" viewBox="0 0 10 10" style="display:none"><rect x="2.5" y="0.5" width="7" height="7" fill="none" stroke="currentColor" stroke-width="1"/><rect x="0.5" y="2.5" width="7" height="7" fill="rgba(6,6,8,0.97)" stroke="currentColor" stroke-width="1"/></svg>
+      </button>
+      <button type="button" class="win-btn close" id="btnWinClose" title="Kapat" aria-label="Kapat">
+        <svg viewBox="0 0 10 10"><path d="M1 1 L9 9 M9 1 L1 9" stroke="currentColor" stroke-width="1.1" fill="none"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <main class="app-content">
+    <section class="glass card" aria-labelledby="urlLabel">
+      <span class="card-label" id="urlLabel">Kaynak URL</span>
+      <div class="url-row">
+        <input type="url" id="mediaUrl" placeholder="YouTube veya X / Twitter bağlantısını yapıştır" autocomplete="off" spellcheck="false">
+        <button type="button" class="btn btn-ghost" id="btnPaste">Yapıştır</button>
+      </div>
+      <button type="button" class="btn btn-primary" id="btnStart">
+        <span class="spinner" id="startSpinner"></span>
+        <span id="startLabel">İndirmeyi Başlat</span>
+      </button>
+      <span class="platform-chip" id="platformChip"></span>
+    </section>
+
+    <section class="glass card" aria-labelledby="formatLabel">
+      <span class="card-label" id="formatLabel">Çıktı formatı</span>
+      <div class="format-grid" id="formatGrid">
+        <button type="button" class="format-card" data-card="prores" aria-pressed="false">
+          <span class="format-tag">PRO</span>
+          <strong>Apple ProRes 422 HQ</strong>
+          <small>MOV · kurgu master</small>
+        </button>
+        <button type="button" class="format-card is-active" data-card="mp4" aria-pressed="true">
+          <strong>MP4 (H.264)</strong>
+          <small>Editor-ready · AAC</small>
+        </button>
+        <button type="button" class="format-card" data-card="4k" aria-pressed="false">
+          <span class="format-tag">PRO</span>
+          <strong>4K</strong>
+          <small>2160p H.264</small>
+        </button>
+        <button type="button" class="format-card is-active" data-card="1080p" aria-pressed="true">
+          <strong>1080p</strong>
+          <small>Full HD H.264</small>
+        </button>
+        <button type="button" class="format-card" data-card="audio" aria-pressed="false" style="grid-column: 1 / -1">
+          <strong>MP3 / WAV</strong>
+          <small>Sadece ses</small>
+          <div class="audio-toggle">
+            <button type="button" class="is-on" data-audio="mp3" id="btnMp3">MP3</button>
+            <button type="button" data-audio="wav" id="btnWav">WAV <span class="format-tag" style="position:static">PRO</span></button>
+          </div>
+        </button>
+      </div>
+    </section>
+
+    <section class="glass card" id="dl-panel" aria-labelledby="progressLabel">
+      <span class="card-label" id="progressLabel">İlerleme</span>
+      <div class="progress-head">
+        <span id="dl-phase">Hazır</span>
+        <span id="dl-percent">%0</span>
+      </div>
+      <div class="bar-wrap">
+        <div class="bar-fill" id="barFill"></div>
+      </div>
+      <div class="dl-metrics">
+        <span>Hız: <strong id="metSpeed">—</strong></span>
+        <span>Boyut: <strong id="metSize">—</strong></span>
+        <span>ETA: <strong id="metEta">—</strong></span>
+      </div>
+      <p id="dl-status"></p>
+      <div class="dl-controls" id="dl-controls">
+        <button type="button" class="btn btn-ghost" id="btnPause">Duraklat</button>
+        <button type="button" class="btn btn-ghost" id="btnStop">Bitir</button>
+      </div>
+    </section>
+
+    <section class="glass card" aria-labelledby="consoleTitle">
+      <div class="console-head">
+        <span class="console-title" id="consoleTitle">Konsol · yt-dlp &amp; ffmpeg</span>
+        <button type="button" class="btn btn-ghost" id="btnLogToggle" style="height:28px">Gizle</button>
+      </div>
+      <div id="log-box" role="log" aria-live="polite"></div>
+    </section>
+  </main>
+
+  <footer class="app-corner">
+    <button type="button" class="corner-link" id="btnSite">(c) 2026 MediaPull · site</button>
+  </footer>
+
+  <div class="toast glass" id="toast" role="status"></div>
+
+  <div class="license-overlay" id="licenseOverlay" hidden>
+    <div class="license-modal glass" role="dialog" aria-labelledby="licenseTitle">
+      <button type="button" class="modal-close" id="btnLicenseClose" aria-label="Kapat">×</button>
+      <h3 id="licenseTitle">VDS HWID Lisans</h3>
+      <p class="hint license-free-only">Lisans sunucusundan aldığın anahtarı yapıştır. Bu cihaz otomatik bağlanır (2 cihaz hakkı).</p>
+      <p class="hint license-pro-only">Pro lisans bu cihazda aktif. Çıkış yapınca cihaz hakkı serbest kalır.</p>
+      <ul class="pro-list">
+        <li>Toplu indirme</li>
+        <li>4K MP4 ve Apple ProRes 422 HQ</li>
+        <li>Kayıpsız ses (WAV) ve maksimum hız</li>
+      </ul>
+      <input type="text" id="license-key" class="license-free-only" placeholder="Lisans anahtarını yapıştır" autocomplete="off" spellcheck="false">
+      <div class="license-actions license-free-only">
+        <button type="button" class="btn btn-primary" id="btnLicenseActivate">Doğrula ve Etkinleştir</button>
+        <button type="button" class="btn btn-ghost" id="btnLicenseBuy">Lisans Satın Al</button>
+      </div>
+      <div class="license-actions license-pro-only">
+        <button type="button" class="btn btn-ghost" id="btnLicenseLogout">Pro hesaptan çıkış</button>
+      </div>
+      <p class="license-msg" id="licenseMsg"></p>
+    </div>
+  </div>
+
+  <script src="format-state.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
