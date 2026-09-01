@@ -26,11 +26,11 @@
   });
 
   const FORMAT_META = Object.freeze({
-    'yt-1080-avc1': { id: 'yt-1080-avc1', label: '1080p MP4 H.264', pro: false },
-    'yt-4k-avc1': { id: 'yt-4k-avc1', label: '4K MP4 H.264', pro: true },
-    'yt-prores': { id: 'yt-prores', label: 'Apple ProRes 422 HQ', pro: true },
-    bestaudio: { id: 'bestaudio', label: 'MP3', pro: false },
-    'yt-wav': { id: 'yt-wav', label: 'WAV / 320kbps', pro: true }
+    'yt-1080-avc1': { id: 'yt-1080-avc1', label: '1080p MP4 H.264', pro: false, ext: 'mp4' },
+    'yt-4k-avc1': { id: 'yt-4k-avc1', label: '4K MP4 H.264', pro: true, ext: 'mp4' },
+    'yt-prores': { id: 'yt-prores', label: 'Apple ProRes 422 HQ', pro: true, ext: 'mov' },
+    bestaudio: { id: 'bestaudio', label: 'MP3', pro: false, ext: 'mp3' },
+    'yt-wav': { id: 'yt-wav', label: 'WAV / 320kbps', pro: true, ext: 'wav' }
   });
 
   const TWITTER_HOSTS = new Set([
@@ -187,6 +187,14 @@
     return String(eta).trim();
   }
 
+  function previewFilename(format) {
+    const ext = format?.ext || 'mp4';
+    const slug = String(format?.label || format?.id || 'MediaPull')
+      .replace(/[^\w.-]+/g, '_')
+      .replace(/^_+|_+$/g, '');
+    return `${slug || 'MediaPull'}.${ext}`;
+  }
+
   return {
     KIND,
     RESOLUTION,
@@ -203,6 +211,7 @@
     detectPlatform,
     normalizeProgress,
     displaySpeed,
-    displayEta
+    displayEta,
+    previewFilename
   };
 });

@@ -51,6 +51,16 @@ test('URL detectors accept YouTube and X only', () => {
   assert.equal(F.detectPlatform('https://twitter.com/a/status/1'), 'x');
 });
 
+test('preview filenames use the resolved format extension', () => {
+  assert.equal(F.previewFilename(F.resolveFormat(F.createFormatState())).endsWith('.mp4'), true);
+  assert.equal(F.previewFilename(F.resolveFormat(F.selectCard(F.createFormatState(), 'prores'))), 'Apple_ProRes_422_HQ.mov');
+  assert.equal(F.previewFilename(F.resolveFormat(F.selectCard(F.createFormatState(), 'audio'))), 'MP3.mp3');
+  assert.equal(
+    F.previewFilename(F.resolveFormat(F.selectCard(F.selectCard(F.createFormatState(), 'audio'), 'wav'))),
+    'WAV_320kbps.wav'
+  );
+});
+
 test('progress payload normalizes number and object forms', () => {
   assert.deepEqual(F.normalizeProgress(42.2), {
     percent: 42.2,
