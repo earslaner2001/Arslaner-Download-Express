@@ -1,4 +1,4 @@
-const { ipcRenderer, shell, clipboard } = require('electron');
+const { ipcRenderer, shell } = require('electron');
 
 function on(channel, handler) {
   const wrapped = (_event, ...args) => handler(...args);
@@ -32,7 +32,7 @@ const mediaPullAPI = {
   windowClose: () => ipcRenderer.send('window-close'),
   onWindowMaximized: (handler) => on('window-maximized', handler),
 
-  readClipboard: () => clipboard.readText(),
+  readClipboard: () => ipcRenderer.invoke('clipboard:read'),
   notify: (payload) => ipcRenderer.send('app-notify', payload),
   openExternal: (url) => {
     if (typeof url === 'string' && /^https?:\/\//i.test(url)) {

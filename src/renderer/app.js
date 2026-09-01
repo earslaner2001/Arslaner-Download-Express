@@ -4,13 +4,14 @@
   const SITE_URL = 'https://media-pull.vercel.app/';
   const STORE_URL_FALLBACK = 'https://earslaner2001.gumroad.com/l/mediapull-pro';
   const LOG_VISIBLE_KEY = 'mediapull-log-visible';
+  const FORMAT_KEY = 'mediapull-format';
   const START_LABEL = 'İndirmeyi Başlat';
 
   const PHASE_LABELS = {
     analyzing: 'Analiz ediliyor...',
     downloading: 'Video verisi alınıyor...',
     merging: 'Video ve ses birleştiriliyor...',
-    converting: 'Dönüştürülüyor...',
+    converting: 'H.264 dönüşümü yapılıyor...',
     paused: 'Duraklatıldı',
     done: 'İndirme tamamlandı!',
     ready: 'Hazır'
@@ -54,15 +55,37 @@
   };
 
   const state = {
-    format: F.createFormatState(),
+    format: loadFormatState(),
     isPro: false,
     storeUrl: STORE_URL_FALLBACK,
     downloading: false,
     paused: false,
     lastPhase: 'ready',
     logVisible: localStorage.getItem(LOG_VISIBLE_KEY) !== '0',
-    demoTimer: null
+    demoTimer: null,
+    pendingProCard: null
   };
+
+  function loadFormatState() {
+    try {
+      const raw = JSON.parse(localStorage.getItem(FORMAT_KEY) || '');
+      if (!raw || typeof raw !== 'object') return F.createFormatState();
+      const next = F.createFormatState(raw);
+      const kinds = Object.values(F.KIND);
+      const resolutions = Object.values(F.RESOLUTION);
+      const audios = Object.values(F.AUDIO);
+      if (!kinds.includes(next.kind) || !resolutions.includes(next.resolution) || !audios.includes(next.audio)) {
+        return F.createFormatState();
+      }
+      return next;
+    } catch {
+      return F.createFormatState();
+    }
+  }
+
+  function saveFormatState() {
+    localStorage.setItem(FORMAT_KEY, JSON.stringify(state.format));
+  }
 
   function assetUrl(rel) {
     return new URL(rel, window.location.href).href;
@@ -166,7 +189,12 @@
     els.licenseBadgeText.textContent = state.isPro ? 'Aktif / Lisanslı' : 'Pasif / Ücretsiz';
     if (!state.isPro && F.resolveFormat(state.format).pro) {
       state.format = F.createFormatState();
+      state.pendingProCard = null;
+    } else if (state.isPro && state.pendingProCard) {
+      state.format = F.selectCard(state.format, state.pendingProCard);
+      state.pendingProCard = null;
     }
+    saveFormatState();
     renderFormatCards();
   }
 
@@ -232,14 +260,27 @@
   async function pasteUrl() {
     playClick();
     try {
-      const text = api?.readClipboard
-        ? await api.readClipboard()
-        : await navigator.clipboard.readText();
-      els.url.value = String(text || '').trim();
+      let text = '';
+      if (api?.readClipboard) {
+        text = await api.readClipboard();
+      } else if (navigator.clipboard?.readText) {
+        text = await navigator.clipboard.readText();
+      }
+      text = String(text || '').trim();
+      const found = (text.match(/https?:\/\/[^\s<>"']+/gi) || []).find((u) => F.isSupportedUrl(u));
+      const value = found || text;
+      if (!value) {
+        setStatus('Pano boş. Önce bir YouTube veya X bağlantısı kopyala.', 'error');
+        return;
+      }
+      els.url.value = value;
+      els.url.dispatchEvent(new Event('input'));
       updatePlatformChip();
+      setStatus('');
       logLine('Pano içeriği yapıştırıldı.', 'dim');
-    } catch {
-      setStatus('Pano okunamadı.', 'error');
+    } catch (err) {
+      setStatus('Pano okunamadı. Ctrl+V ile yapıştırmayı dene.', 'error');
+      logLine(err?.message || 'Pano okunamadı.', 'err');
     }
   }
 
@@ -268,6 +309,7 @@
     logLine(`Format: ${resolved.label}`, 'dim');
     lockStart();
     resetPanel();
+    setStatus(`${resolved.label} indiriliyor.`);
 
     if (api?.startDownload) {
       api.startDownload(url, resolved.id);
@@ -336,8 +378,13 @@
         event.stopPropagation();
         playClick();
         const next = F.selectCard(state.format, audioBtn.dataset.audio);
-        if (F.resolveFormat(next).pro && !requirePro('WAV çıktısı Pro plana özel.')) return;
+        if (F.resolveFormat(next).pro && !requirePro('WAV çıktısı Pro plana özel.')) {
+          state.pendingProCard = audioBtn.dataset.audio;
+          return;
+        }
         state.format = next;
+        state.pendingProCard = null;
+        saveFormatState();
         renderFormatCards();
         return;
       }
@@ -347,9 +394,12 @@
       playClick();
       const next = F.selectCard(state.format, card.dataset.card);
       if (F.resolveFormat(next).pro && !requirePro('Bu format Pro plana özel. Lütfen Pro\'ya geç.')) {
+        state.pendingProCard = card.dataset.card;
         return;
       }
       state.format = next;
+      state.pendingProCard = null;
+      saveFormatState();
       renderFormatCards();
     });
   }
@@ -431,6 +481,11 @@
     api?.onDownloadPhase?.((phase) => {
       setPhase(phase);
       logLine(PHASE_LABELS[phase] || phase, 'info');
+      if (phase === 'converting') {
+        setStatus('Adobe uyumlu H.264 kodlanıyor. GPU varsa bu adım çok daha kısa sürer.');
+        setMetric(els.speed, null);
+        setMetric(els.eta, null);
+      }
     });
     api?.onDownloadStream?.((idx) => {
       setBar(0, true);

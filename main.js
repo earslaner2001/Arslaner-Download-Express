@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, dialog, nativeImage, Notification } = require('electron');
+const { app, BrowserWindow, ipcMain, dialog, nativeImage, Notification, clipboard } = require('electron');
 const path = require('path');
 const { spawn, exec } = require('child_process');
 const fs = require('fs');
@@ -18,7 +18,7 @@ let mainWindow;
 let activeDownload = null;
 const binariesManager = new BinariesManager();
 
-const LICENSE_API = 'http://194.105.5.6:3000';
+const LICENSE_API = 'http://194.105.5.6:50000';
 const LICENSE_STORE_URL = 'https://earslaner2001.gumroad.com/l/mediapull-pro';
 const PRO_FORMATS = new Set(['yt-4k-avc1', 'yt-prores', 'yt-wav']);
 let isProUser = false;
@@ -74,45 +74,66 @@ function maskLicenseKey(key) {
   return `${k.slice(0, 4)}••••${k.slice(-4)}`;
 }
 
-async function activateLicenseOnServer(licenseKey) {
-  const res = await fetch(`${LICENSE_API}/api/v1/license/activate`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      licenseKey,
-      machineId,
-      product: 'mediapull'
-    })
-  });
-  let data;
-  try {
-    data = await res.json();
-  } catch {
-    throw new Error('Lisans sunucusu geçersiz yanıt verdi.');
+async function parseLicenseResponse(res, fallbackMessage) {
+  const text = await res.text();
+  let data = null;
+  if (text) {
+    try {
+      data = JSON.parse(text);
+    } catch {
+      data = null;
+    }
   }
-  if (!data.success) throw new Error(data.message || 'Lisans etkinleştirilemedi.');
+  if (!data) {
+    throw new Error(
+      res.ok
+        ? 'Lisans sunucusu geçersiz yanıt verdi.'
+        : `Lisans sunucusuna ulaşılamadı (HTTP ${res.status}).`
+    );
+  }
+  if (!data.success) throw new Error(data.message || fallbackMessage);
+  return data;
+}
+
+async function activateLicenseOnServer(licenseKey) {
+  let res;
+  try {
+    res = await fetch(`${LICENSE_API}/api/v1/license/activate`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        licenseKey,
+        machineId,
+        product: 'mediapull'
+      }),
+      signal: AbortSignal.timeout(12000)
+    });
+  } catch {
+    throw new Error('Lisans sunucusuna ulaşılamadı. VDS ve 50000 portunu kontrol et.');
+  }
+  const data = await parseLicenseResponse(res, 'Lisans etkinleştirilemedi.');
   if (!data.token) throw new Error('Sunucu token döndürmedi.');
   return data.token;
 }
 
 async function deactivateLicenseOnServer() {
   if (!licenseToken) return;
-  const res = await fetch(`${LICENSE_API}/api/v1/license/deactivate`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      token: licenseToken,
-      machineId,
-      product: 'mediapull'
-    })
-  });
-  let data;
+  let res;
   try {
-    data = await res.json();
+    res = await fetch(`${LICENSE_API}/api/v1/license/deactivate`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        token: licenseToken,
+        machineId,
+        product: 'mediapull'
+      }),
+      signal: AbortSignal.timeout(12000)
+    });
   } catch {
-    throw new Error('Lisans sunucusu geçersiz yanıt verdi.');
+    throw new Error('Lisans sunucusuna ulaşılamadı. VDS ve 50000 portunu kontrol et.');
   }
-  if (!data.success) throw new Error(data.message || 'Sunucudan çıkış yapılamadı.');
+  await parseLicenseResponse(res, 'Sunucudan çıkış yapılamadı.');
 }
 
 function clearLocalLicense() {
@@ -128,6 +149,18 @@ function getLicenseSnapshot() {
     masked: licenseMasked,
     storeUrl: LICENSE_STORE_URL
   };
+}
+
+function readClipboardText() {
+  const text = String(clipboard.readText() || '').trim();
+  if (text) return text;
+  try {
+    const bookmark = clipboard.readBookmark();
+    if (bookmark && bookmark.url) return String(bookmark.url).trim();
+  } catch { /* ignore */ }
+  const html = String(clipboard.readHTML() || '');
+  const href = html.match(/https?:\/\/[^\s"'<>]+/i);
+  return href ? href[0].trim() : '';
 }
 
 function resolveAppIcon() {
@@ -177,23 +210,62 @@ function isTwitterOrXUrl(url) {
 const TW_NLE_FORMAT =
   'best[protocol=https][ext=mp4]/best[ext=mp4]/bestvideo+bestaudio/best';
 
-const FMT_1080 =
-  'bv*[height<=1080]+ba/b[height<=1080]/bv*+ba/b';
-const FMT_4K =
-  'bv*[height<=2160]+ba/b[height<=2160]/bv*+ba/b';
-const FMT_PRORES =
-  'bv*+ba/b';
+function videoPlusOriginalAudio(height) {
+  const cap = height ? `[height<=${height}]` : '';
+  return [
+    `bv*${cap}+ba[format_note*=original]`,
+    `bv*${cap}+ba[language=original]`,
+    `bv*${cap}+ba`,
+    height ? `b${cap}` : null,
+    'bv*+ba',
+    'b'
+  ].filter(Boolean).join('/');
+}
+
+const FMT_1080 = videoPlusOriginalAudio(1080);
+const FMT_4K = videoPlusOriginalAudio(2160);
+const FMT_PRORES = videoPlusOriginalAudio(null);
+const FMT_AUDIO =
+  'bestaudio[format_note*=original]/bestaudio[language=original]/bestaudio/best';
 
 // VideoConvertor args are a single ffmpeg argv string; keep a space after each flag/value
 // (e.g. "-c:v libx264 -pix_fmt yuv420p") so libx264 and pix_fmt never concatenate.
-const PPA_1080 =
-  'VideoConvertor:-c:v libx264 -pix_fmt yuv420p -profile:v high -level 4.1 -c:a aac -b:a 192k -ar 48000';
-const PPA_4K =
-  'VideoConvertor:-c:v libx264 -pix_fmt yuv420p -profile:v high -level 5.1 -c:a aac -b:a 320k -ar 48000';
 const PPA_PRORES =
   'VideoConvertor:-c:v prores_ks -profile:v 3 -vendor apl0 -bits_per_mb 8000 -pix_fmt yuv422p10le -c:a pcm_s16le -ar 48000';
 const PPA_MP3 = 'ExtractAudio:-b:a 256k';
 const PPA_WAV = 'ExtractAudio:-c:a pcm_s16le';
+
+const SOFTWARE_H264_ENCODER = {
+  id: 'libx264',
+  nvencFamily: null,
+  label: 'CPU (libx264 veryfast)'
+};
+
+function h264VideoArgs(encoder, { fourK = false } = {}) {
+  const kind = encoder?.id || 'libx264';
+  if (kind === 'nvenc') {
+    if (encoder.nvencFamily === 'p') {
+      const preset = fourK ? 'p2' : 'p4';
+      return `-c:v h264_nvenc -preset ${preset} -tune hq -rc vbr -cq 19 -b:v 0`;
+    }
+    return '-c:v h264_nvenc -preset fast -rc vbr -cq 19 -b:v 0';
+  }
+  if (kind === 'amf') {
+    const quality = fourK ? 'speed' : 'balanced';
+    return `-c:v h264_amf -quality ${quality} -rc cqp -qp_i 18 -qp_p 20`;
+  }
+  if (kind === 'qsv') {
+    const preset = fourK ? 'veryfast' : 'faster';
+    return `-c:v h264_qsv -preset ${preset} -global_quality 21`;
+  }
+  const crf = fourK ? '18' : '19';
+  return `-c:v libx264 -preset veryfast -crf ${crf}`;
+}
+
+function buildH264ConvertorPpa(encoder, { level, audioBitrate, fourK = false } = {}) {
+  const video = h264VideoArgs(encoder, { fourK });
+  return `VideoConvertor:${video} -pix_fmt yuv420p -profile:v high -level ${level} -c:a aac -b:a ${audioBitrate} -ar 48000`;
+}
 
 function appendVideoPostprocessorArgs(args, videoConvertorPpa) {
   args.push('--postprocessor-args', videoConvertorPpa);
@@ -212,36 +284,49 @@ function normalizeFormatKey(format) {
   return 'yt-1080-avc1';
 }
 
-function applyFormatArgs(args, format, { isTwitter = false } = {}) {
+function applyFormatArgs(args, format, { isTwitter = false, encoder = SOFTWARE_H264_ENCODER } = {}) {
   switch (normalizeFormatKey(format)) {
     case 'bestaudio':
-      args.push('-f', 'bestaudio/best');
+      args.push('-f', FMT_AUDIO);
+      args.push('-S', 'lang,br');
       args.push('-x', '--audio-format', 'mp3', '--audio-quality', '0');
       args.push('--postprocessor-args', PPA_MP3);
       break;
     case 'yt-wav':
-      args.push('-f', 'bestaudio/best');
+      args.push('-f', FMT_AUDIO);
+      args.push('-S', 'lang,br');
       args.push('-x', '--audio-format', 'wav');
       args.push('--postprocessor-args', PPA_WAV);
       break;
     case 'yt-prores':
       args.push('-f', FMT_PRORES);
-      args.push('--merge-output-format', 'mov');
+      args.push('-S', 'lang,res,fps,br');
+      args.push('--merge-output-format', 'mkv');
       args.push('--recode-video', 'mov');
       appendVideoPostprocessorArgs(args, PPA_PRORES);
       break;
     case 'yt-4k-avc1':
       args.push('-f', FMT_4K);
-      args.push('-S', 'res:2160,fps');
+      args.push('-S', 'lang,res:2160,fps,br');
+      args.push('--merge-output-format', 'mkv');
       args.push('--recode-video', 'mp4');
-      appendVideoPostprocessorArgs(args, PPA_4K);
+      appendVideoPostprocessorArgs(args, buildH264ConvertorPpa(encoder, {
+        level: '5.2',
+        audioBitrate: '320k',
+        fourK: true
+      }));
       break;
     case 'yt-1080-avc1':
     default:
       args.push('-f', isTwitter ? TW_NLE_FORMAT : FMT_1080);
-      if (!isTwitter) args.push('-S', 'res:1080,fps');
+      if (!isTwitter) args.push('-S', 'lang,res:1080,fps,br');
+      args.push('--merge-output-format', 'mkv');
       args.push('--recode-video', 'mp4');
-      appendVideoPostprocessorArgs(args, PPA_1080);
+      appendVideoPostprocessorArgs(args, buildH264ConvertorPpa(encoder, {
+        level: '4.2',
+        audioBitrate: '192k',
+        fourK: false
+      }));
       break;
   }
 }
@@ -342,6 +427,9 @@ function userFacingError(log) {
   if (isYoutubeForbidden(log)) {
     return 'YouTube video akışı reddedildi (403). Bağlantıyı tekrar dene; motor güncel değilse arka planda yenilenir.';
   }
+  if (/Postprocessing:\s*Conversion failed/i.test(log)) {
+    return 'H.264 dönüşümü başarısız. 4K 60fps için kodlayıcı ayarı güncellendi; indirmeyi tekrar dene.';
+  }
   return extractErrorMessage(log);
 }
 
@@ -357,7 +445,12 @@ function extractSavedLabel(log) {
   return null;
 }
 
-function buildDownloadCommand(url, format) {
+function isH264VideoFormat(format) {
+  const key = normalizeFormatKey(format);
+  return key === 'yt-1080-avc1' || key === 'yt-4k-avc1';
+}
+
+function buildDownloadCommand(url, format, encoder = SOFTWARE_H264_ENCODER) {
   const downloadsDir = path.join(os.homedir(), 'Downloads', 'MediaPullDownloads');
   if (!fs.existsSync(downloadsDir)) {
     fs.mkdirSync(downloadsDir, { recursive: true });
@@ -374,23 +467,27 @@ function buildDownloadCommand(url, format) {
     twitter: isTwitter
   });
 
-  applyFormatArgs(args, format, { isTwitter });
+  applyFormatArgs(args, format, { isTwitter, encoder });
   args.push(urlTrimmed);
 
-  return { ytDlpPath, args };
+  return { ytDlpPath, args, encoder };
 }
 
 const RE_PROGRESS = /(\d{1,3}\.\d+)%\s+of\s+~?\s*([\d.]+\s*\S+)\s+at\s+([\d.]+\s*\S+)(?:\s+ETA\s+(\d{2}:\d{2}))?/;
 const RE_PROGRESS_DONE = /100%\s+of\s+~?\s*([\d.]+\s*\S+)/;
 
-function spawnDownload(sender, url, format, { retriedAfterUpdate = false } = {}) {
-  const { ytDlpPath, args } = buildDownloadCommand(url, format);
-  console.log('YT-DLP:', ytDlpPath, args.join(' '));
+async function spawnDownload(sender, url, format, { retriedAfterUpdate = false } = {}) {
+  try {
+    const encoder = isH264VideoFormat(format)
+      ? await binariesManager.detectH264Encoder()
+      : SOFTWARE_H264_ENCODER;
+    const { ytDlpPath, args } = buildDownloadCommand(url, format, encoder);
+    console.log('YT-DLP:', ytDlpPath, args.join(' '));
 
-  const proc = spawn(ytDlpPath, args, {
-    windowsHide: true,
-    env: { ...process.env, ELECTRON_RUN_AS_NODE: '1' }
-  });
+    const proc = spawn(ytDlpPath, args, {
+      windowsHide: true,
+      env: { ...process.env, ELECTRON_RUN_AS_NODE: '1' }
+    });
 
   const session = {
     proc,
@@ -437,10 +534,10 @@ function spawnDownload(sender, url, format, { retriedAfterUpdate = false } = {})
         sender.send('download-progress', { percent: 100, size: null, speed: null, eta: null, stream: session.streamIndex });
         continue;
       }
-      if (/\[Merger\]/.test(trimmed)) {
-        sender.send('download-phase', 'merging');
-      } else if (/\[ffmpeg\]/.test(trimmed)) {
+      if (/\[VideoConvertor\]/.test(trimmed) || /\[ffmpeg\]/.test(trimmed)) {
         sender.send('download-phase', 'converting');
+      } else if (/\[Merger\]/.test(trimmed)) {
+        sender.send('download-phase', 'merging');
       } else if (/\[download\]\s+Destination:/.test(trimmed)) {
         sender.send('download-phase', 'downloading');
       } else if (/\[youtube\]|\[twitter\]|\[x\]|\[info\]|\[generic\]/i.test(trimmed)) {
@@ -462,6 +559,9 @@ function spawnDownload(sender, url, format, { retriedAfterUpdate = false } = {})
   }
 
   sender.send('download-phase', 'analyzing');
+  if (isH264VideoFormat(format) && encoder?.label) {
+    sender.send('download-log', `H.264 kodlayıcı: ${encoder.label}`);
+  }
 
   proc.stdout.on('data', (data) => { parseAndSend(data.toString('utf-8')); });
 
@@ -525,7 +625,12 @@ function spawnDownload(sender, url, format, { retriedAfterUpdate = false } = {})
     }
   });
 
-  return session;
+    return session;
+  } catch (err) {
+    activeDownload = null;
+    sender.send('download-error', err.message || 'İndirme başlatılamadı.');
+    return null;
+  }
 }
 
 function createWindow() {
@@ -541,7 +646,8 @@ function createWindow() {
     webPreferences: {
       preload: path.join(__dirname, 'preload', 'index.js'),
       nodeIntegration: false,
-      contextIsolation: true
+      contextIsolation: true,
+      sandbox: false
     }
   });
 
@@ -636,6 +742,9 @@ app.whenReady().then(async () => {
   loadLicenseState();
   await checkAndDownloadBinaries();
   createWindow();
+  binariesManager.detectH264Encoder().catch((err) => {
+    console.warn('H.264 encoder on yuklemesi:', err.message);
+  });
   binariesManager.selfUpdateYtDlp().catch((err) => {
     console.warn('yt-dlp arka plan guncellemesi:', err.message);
   });
@@ -644,6 +753,7 @@ app.whenReady().then(async () => {
   });
 
   ipcMain.handle('license:check', () => getLicenseSnapshot());
+  ipcMain.handle('clipboard:read', () => readClipboardText());
 
   ipcMain.handle('license:activate', async (_event, key) => {
     const licenseKey = String(key || '').trim();

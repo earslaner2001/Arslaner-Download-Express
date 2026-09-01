@@ -1,5 +1,26 @@
 # Değişiklik günlüğü
 
+## [2.3.0] — 2026-09-01
+
+### Özet
+
+YouTube GVS PO Token / SABR koruması için yeni istemci motoru, Adobe uyumlu H.264/ProRes dönüşüm hattı ve VDS lisans mimarisi.
+
+### Eklenenler
+
+- **YouTube istemci motoru:** `web_creator`, `web_embedded`, `android_vr` ile GVS PO Token / SABR kısıtlamasını aşma.
+- **Deno / EJS JS runtime:** YouTube player çözümlemesi için yerel Deno ve `ejs:github` uzak bileşenleri.
+- **H.264 / ProRes dönüşüm hattı:** Premiere / After Effects için GPU hızlandırmalı (NVENC/AMF/QSV) H.264 + AAC; ProRes 422 HQ.
+- **VDS lisans mimarisi:** HWID ile 2 cihaz hakkı, `50000` portundaki lisans sunucusu.
+
+### İyileştirilenler
+
+- **4K 60fps:** H.264 Level 5.2; orijinal ses dili (dublaj değil).
+- **1080p:** Ses-only düşme düzeltmesi; dönüşüm her zaman H.264’e zorlanır.
+- **Pano:** Yapıştır butonu ana süreçten panoyu okur.
+
+[2.3.0]: https://github.com/earslaner2001/Arslaner-Download-Express/releases/tag/v2.3.0
+
 ## [2.2.0] — 2026-08-18
 
 ### Özet

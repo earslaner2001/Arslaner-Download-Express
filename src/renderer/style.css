@@ -273,6 +273,8 @@ body::after {
   font-weight: 600;
   letter-spacing: 0.04em;
   cursor: pointer;
+  -webkit-app-region: no-drag;
+  cursor: pointer;
   transition: transform var(--ease), box-shadow var(--ease), background var(--ease), border-color var(--ease), opacity var(--ease);
 }
 

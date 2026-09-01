@@ -2,10 +2,18 @@ const fs = require('fs');
 const path = require('path');
 const https = require('https');
 const { app } = require('electron');
-const { exec } = require('child_process');
+const { exec, execFile } = require('child_process');
 const { promisify } = require('util');
 
 const execAsync = promisify(exec);
+const execFileAsync = promisify(execFile);
+
+const H264_ENCODER_LABELS = {
+  nvenc: 'NVIDIA NVENC',
+  amf: 'AMD AMF',
+  qsv: 'Intel Quick Sync',
+  libx264: 'CPU (libx264 veryfast)'
+};
 const UPDATE_CHECK_INTERVAL_MS = 24 * 60 * 60 * 1000;
 
 class BinariesManager {
@@ -19,6 +27,7 @@ class BinariesManager {
     this.ffmpegPath = path.join(this.binariesDir, 'ffmpeg.exe');
     this.denoPath = path.join(this.binariesDir, 'deno.exe');
     this._selfUpdatePromise = null;
+    this._h264EncoderPromise = null;
 
     this.YTDLP_URL = 'https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp.exe';
     this.FFMPEG_URL = 'https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-win64-gpl.zip';
@@ -317,6 +326,74 @@ class BinariesManager {
 
   getFfmpegPath() {
     return this.ffmpegPath;
+  }
+
+  async testFfmpegEncoder(encoderArgs) {
+    try {
+      await execFileAsync(this.ffmpegPath, [
+        '-hide_banner',
+        '-loglevel', 'error',
+        '-f', 'lavfi',
+        '-i', 'color=c=black:s=256x256:d=0.2',
+        '-pix_fmt', 'yuv420p',
+        ...encoderArgs,
+        '-frames:v', '2',
+        '-f', 'null',
+        '-'
+      ], { timeout: 15000, windowsHide: true });
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  async _detectH264Encoder() {
+    const candidates = [
+      {
+        id: 'nvenc',
+        nvencFamily: 'p',
+        args: ['-c:v', 'h264_nvenc', '-preset', 'p4', '-tune', 'hq', '-rc', 'vbr', '-cq', '19', '-b:v', '0']
+      },
+      {
+        id: 'nvenc',
+        nvencFamily: 'legacy',
+        args: ['-c:v', 'h264_nvenc', '-preset', 'fast', '-rc', 'vbr', '-cq', '19', '-b:v', '0']
+      },
+      {
+        id: 'amf',
+        args: ['-c:v', 'h264_amf', '-quality', 'speed', '-rc', 'cqp', '-qp_i', '18', '-qp_p', '20']
+      },
+      {
+        id: 'qsv',
+        args: ['-c:v', 'h264_qsv', '-preset', 'veryfast', '-global_quality', '21']
+      }
+    ];
+
+    for (const candidate of candidates) {
+      if (await this.testFfmpegEncoder(candidate.args)) {
+        const encoder = {
+          id: candidate.id,
+          nvencFamily: candidate.nvencFamily || null,
+          label: H264_ENCODER_LABELS[candidate.id]
+        };
+        console.log('H.264 encoder:', encoder.label);
+        return encoder;
+      }
+    }
+
+    const fallback = { id: 'libx264', nvencFamily: null, label: H264_ENCODER_LABELS.libx264 };
+    console.log('H.264 encoder:', fallback.label);
+    return fallback;
+  }
+
+  detectH264Encoder() {
+    if (!this._h264EncoderPromise) {
+      this._h264EncoderPromise = this._detectH264Encoder().catch((err) => {
+        console.warn('H.264 encoder tespiti basarisiz:', err.message);
+        return { id: 'libx264', nvencFamily: null, label: H264_ENCODER_LABELS.libx264 };
+      });
+    }
+    return this._h264EncoderPromise;
   }
 
   async verifyBinaries() {

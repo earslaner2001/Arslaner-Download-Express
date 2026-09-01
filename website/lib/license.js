@@ -1,5 +1,5 @@
 const PRODUCT = process.env.LICENSE_PRODUCT || 'mediapull';
-const DEFAULT_SERVER = 'http://194.105.5.6:3000';
+const DEFAULT_SERVER = 'http://194.105.5.6:50000';
 const TIMEOUT_MS = 8000;
 
 const DEFAULT_PRO_EMAILS = [

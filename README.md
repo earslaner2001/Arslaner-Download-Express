@@ -20,7 +20,7 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/earslaner2001/Arslaner-Download-Express/releases/latest"><img src="https://img.shields.io/badge/Sürüm-2.2.0-ff0000?style=flat-square" alt="Version 2.2.0"></a>
+  <a href="https://github.com/earslaner2001/Arslaner-Download-Express/releases/latest"><img src="https://img.shields.io/badge/Sürüm-2.3.0-ff0000?style=flat-square" alt="Version 2.3.0"></a>
   <img src="https://img.shields.io/badge/Editor--Ready-H.264%20NLE%20Compatible-00c853?style=flat-square" alt="Editor-Ready (H.264 NLE Compatible)">
   <img src="https://img.shields.io/badge/Premiere%20%2F%20AE-yuv420p%20AAC-7c4dff?style=flat-square" alt="Premiere / AE compatible">
   <a href="LICENSE"><img src="https://img.shields.io/badge/Lisans-MIT-0078d4?style=flat-square" alt="MIT License"></a>
