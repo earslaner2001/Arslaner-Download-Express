@@ -63,6 +63,7 @@
     lastPhase: 'ready',
     logVisible: localStorage.getItem(LOG_VISIBLE_KEY) !== '0',
     demoTimer: null,
+    demo: null,
     pendingProCard: null
   };
 
@@ -240,10 +241,8 @@
     els.startSpinner.classList.remove('is-on');
     els.controls.classList.remove('is-on');
     els.barFill.classList.remove('is-paused');
-    if (state.demoTimer) {
-      window.clearInterval(state.demoTimer);
-      state.demoTimer = null;
-    }
+    stopDemoTimer();
+    state.demo = null;
   }
 
   function updatePlatformChip() {
@@ -316,26 +315,74 @@
       return;
     }
 
-    simulateDownload(resolved.label);
+    simulateDownload(resolved);
   }
 
-  function simulateDownload(label) {
-    let pct = 0;
+  function stopDemoTimer() {
+    if (!state.demoTimer) return;
+    window.clearInterval(state.demoTimer);
+    state.demoTimer = null;
+  }
+
+  function applyPausedUi(paused) {
+    state.paused = paused;
+    els.btnPause.disabled = false;
+    els.btnPause.textContent = paused ? 'Devam Et' : 'Duraklat';
+    els.barFill.classList.toggle('is-paused', paused);
+    if (paused) {
+      setPhase('paused');
+      setMetric(els.speed, null);
+      setMetric(els.eta, null);
+      logLine('İndirme duraklatıldı. Devam Et ile kaldığı yerden sürdürülür.', 'warn');
+      return;
+    }
+    setPhase(state.lastPhase);
+    logLine('İndirme devam ediyor.', 'info');
+  }
+
+  function tickDemo() {
+    const demo = state.demo;
+    if (!demo) return;
+    demo.pct = Math.min(100, demo.pct + 7 + Math.random() * 8);
+    applyProgress({
+      percent: demo.pct,
+      speed: '12.4 MB/s',
+      size: '48.2 MiB',
+      eta: demo.pct >= 100 ? null : '00:08'
+    });
+    if (demo.pct >= 100) {
+      stopDemoTimer();
+      onComplete(F.previewFilename(demo.format));
+    }
+  }
+
+  function simulateDownload(format) {
+    state.demo = { pct: 0, format };
     logLine('Önizleme modu: motor bağlı değil, ilerleme simüle ediliyor.', 'warn');
-    state.demoTimer = window.setInterval(() => {
-      pct = Math.min(100, pct + 7 + Math.random() * 8);
-      applyProgress({
-        percent: pct,
-        speed: '12.4 MB/s',
-        size: '48.2 MiB',
-        eta: pct >= 100 ? null : '00:08'
-      });
-      if (pct >= 100) {
-        window.clearInterval(state.demoTimer);
-        state.demoTimer = null;
-        onComplete(`${label.replace(/\s+/g, '_')}.mp4`);
+    state.demoTimer = window.setInterval(tickDemo, 280);
+  }
+
+  function togglePause() {
+    if (state.paused) {
+      if (api?.resumeDownload) {
+        api.resumeDownload();
+        return;
       }
-    }, 280);
+      if (!state.demo) return;
+      applyPausedUi(false);
+      state.demoTimer = window.setInterval(tickDemo, 280);
+      return;
+    }
+
+    if (api?.pauseDownload) {
+      els.btnPause.disabled = true;
+      api.pauseDownload();
+      return;
+    }
+
+    if (!state.demoTimer) return;
+    stopDemoTimer();
+    applyPausedUi(true);
   }
 
   function applyProgress(raw) {
@@ -493,23 +540,8 @@
       setPhase(label);
       logLine(label, 'info');
     });
-    api?.onDownloadPaused?.(() => {
-      state.paused = true;
-      els.btnPause.disabled = false;
-      els.btnPause.textContent = 'Devam Et';
-      els.barFill.classList.add('is-paused');
-      setPhase('paused');
-      setMetric(els.speed, null);
-      setMetric(els.eta, null);
-      logLine('İndirme duraklatıldı. Devam Et ile kaldığı yerden sürdürülür.', 'warn');
-    });
-    api?.onDownloadResumed?.(() => {
-      state.paused = false;
-      els.btnPause.textContent = 'Duraklat';
-      els.barFill.classList.remove('is-paused');
-      setPhase(state.lastPhase);
-      logLine('İndirme devam ediyor.', 'info');
-    });
+    api?.onDownloadPaused?.(() => applyPausedUi(true));
+    api?.onDownloadResumed?.(() => applyPausedUi(false));
     api?.onDownloadCancelled?.(() => {
       setStatus('İndirme iptal edildi.', 'error');
       logLine('İndirme kullanıcı tarafından durduruldu.', 'warn');
@@ -542,18 +574,19 @@
     });
     els.btnPause.addEventListener('click', () => {
       playClick();
-      if (state.paused) api?.resumeDownload?.();
-      else {
-        els.btnPause.disabled = true;
-        api?.pauseDownload?.();
-      }
+      togglePause();
     });
     els.btnStop.addEventListener('click', () => {
       playClick();
       els.btnPause.disabled = true;
       els.btnStop.disabled = true;
-      if (api?.stopDownload) api.stopDownload();
-      else unlockStart();
+      if (api?.stopDownload) {
+        api.stopDownload();
+        return;
+      }
+      setStatus('İndirme iptal edildi.', 'error');
+      logLine('İndirme kullanıcı tarafından durduruldu.', 'warn');
+      unlockStart();
     });
     document.getElementById('btnSite').addEventListener('click', () => {
       if (api?.openExternal) api.openExternal(SITE_URL);
