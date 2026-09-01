@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, dialog, nativeImage } = require('electron');
+const { app, BrowserWindow, ipcMain, dialog, nativeImage, Notification } = require('electron');
 const path = require('path');
 const { spawn, exec } = require('child_process');
 const fs = require('fs');
@@ -162,7 +162,7 @@ function cleanupPartFiles(logText) {
     } catch { /* ignore */ }
   }
 }
-const APP_SIZE = { width: 540, height: 910, minWidth: 480, minHeight: 800 };
+const APP_SIZE = { width: 580, height: 900, minWidth: 500, minHeight: 760 };
 
 function isTwitterOrXUrl(url) {
   try {
@@ -535,13 +535,13 @@ function createWindow() {
     minWidth: APP_SIZE.minWidth,
     minHeight: APP_SIZE.minHeight,
     frame: false,
-    backgroundColor: '#0c0c0e',
+    backgroundColor: '#0d0e12',
     autoHideMenuBar: true,
     icon: APP_ICON || undefined,
     webPreferences: {
       preload: path.join(__dirname, 'preload', 'index.js'),
-      nodeIntegration: true,
-      contextIsolation: false
+      nodeIntegration: false,
+      contextIsolation: true
     }
   });
 
@@ -552,7 +552,7 @@ function createWindow() {
     mainWindow.webContents.send('window-maximized', false);
   });
 
-  mainWindow.loadFile('index.html');
+  mainWindow.loadFile(path.join(__dirname, 'src', 'renderer', 'index.html'));
 }
 
 function createLoadingWindow() {
@@ -719,6 +719,16 @@ app.whenReady().then(async () => {
 
   ipcMain.on('window-close', () => {
     mainWindow?.close();
+  });
+
+  ipcMain.on('app-notify', (_event, payload) => {
+    if (!Notification.isSupported()) return;
+    const notification = new Notification({
+      title: payload?.title || 'MediaPull',
+      body: payload?.body || '',
+      icon: APP_ICON || undefined
+    });
+    notification.show();
   });
 
   ipcMain.on('start-ytdlp', (event, url, format) => {
