@@ -686,6 +686,7 @@ main {
   max-width: var(--max);
   margin: 0 auto;
   padding: 4rem 1.5rem;
+  scroll-margin-top: 5.5rem;
 }
 
 .section-alt {

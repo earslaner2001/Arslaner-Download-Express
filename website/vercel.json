@@ -1,6 +1,12 @@
 {
   "cleanUrls": true,
   "trailingSlash": false,
+  "rewrites": [
+    { "source": "/ozellikler", "destination": "/index.html" },
+    { "source": "/nasil", "destination": "/index.html" },
+    { "source": "/pro", "destination": "/index.html" },
+    { "source": "/indir", "destination": "/index.html" }
+  ],
   "headers": [
     {
       "source": "/api/(.*)",

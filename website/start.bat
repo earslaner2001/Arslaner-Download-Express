@@ -38,4 +38,4 @@ if exist ".env" (
 echo UYARI: website\.env yok. Google girisi icin Vercel env veya .env gerekli.
 echo Statik onizleme aciliyor (API yok).
 start "" "http://localhost:3000"
-npx --yes serve . -l 3000
+npx --yes serve . -l 3000 -s
