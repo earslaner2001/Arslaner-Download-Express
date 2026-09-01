@@ -48,32 +48,32 @@
     <section class="glass card" aria-labelledby="formatLabel">
       <span class="card-label" id="formatLabel">Çıktı formatı</span>
       <div class="format-grid" id="formatGrid">
-        <button type="button" class="format-card" data-card="prores" aria-pressed="false">
+        <div class="format-card" data-card="prores" role="button" tabindex="0" aria-pressed="false">
           <span class="format-tag">PRO</span>
           <strong>Apple ProRes 422 HQ</strong>
           <small>MOV · kurgu master</small>
-        </button>
-        <button type="button" class="format-card is-active" data-card="mp4" aria-pressed="true">
+        </div>
+        <div class="format-card is-active" data-card="mp4" role="button" tabindex="0" aria-pressed="true">
           <strong>MP4 (H.264)</strong>
           <small>Editor-ready · AAC</small>
-        </button>
-        <button type="button" class="format-card" data-card="4k" aria-pressed="false">
+        </div>
+        <div class="format-card" data-card="4k" role="button" tabindex="0" aria-pressed="false">
           <span class="format-tag">PRO</span>
           <strong>4K</strong>
           <small>2160p H.264</small>
-        </button>
-        <button type="button" class="format-card is-active" data-card="1080p" aria-pressed="true">
+        </div>
+        <div class="format-card is-active" data-card="1080p" role="button" tabindex="0" aria-pressed="true">
           <strong>1080p</strong>
           <small>Full HD H.264</small>
-        </button>
-        <button type="button" class="format-card" data-card="audio" aria-pressed="false" style="grid-column: 1 / -1">
+        </div>
+        <div class="format-card" data-card="audio" role="button" tabindex="0" aria-pressed="false" style="grid-column: 1 / -1">
           <strong>MP3 / WAV</strong>
           <small>Sadece ses</small>
-          <div class="audio-toggle">
+          <div class="audio-toggle" id="audioToggle" hidden>
             <button type="button" class="is-on" data-audio="mp3" id="btnMp3">MP3</button>
             <button type="button" data-audio="wav" id="btnWav">WAV <span class="format-tag" style="position:static">PRO</span></button>
           </div>
-        </button>
+        </div>
       </div>
     </section>
 

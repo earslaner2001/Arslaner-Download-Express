@@ -108,7 +108,7 @@
     els.toast.textContent = text;
     els.toast.classList.add('is-on');
     window.clearTimeout(showToast._t);
-    showToast._t = window.setTimeout(() => els.toast.classList.remove('is-on'), 4200);
+    showToast._t = window.setTimeout(() => els.toast.classList.remove('is-on'), 5200);
   }
 
   function setBar(percent, instant = false) {
@@ -154,6 +154,8 @@
     });
     els.btnMp3.classList.toggle('is-on', state.format.audio === F.AUDIO.MP3);
     els.btnWav.classList.toggle('is-on', state.format.audio === F.AUDIO.WAV);
+    const audioToggle = document.getElementById('audioToggle');
+    if (audioToggle) audioToggle.hidden = state.format.kind !== F.KIND.AUDIO;
   }
 
   function applyLicenseUI(snapshot) {
@@ -320,6 +322,14 @@
   }
 
   function bindFormatCards() {
+    els.formatGrid.addEventListener('keydown', (event) => {
+      if (event.key !== 'Enter' && event.key !== ' ') return;
+      if (event.target.closest('[data-audio]')) return;
+      const card = event.target.closest('.format-card');
+      if (!card) return;
+      event.preventDefault();
+      card.click();
+    });
     els.formatGrid.addEventListener('click', (event) => {
       const audioBtn = event.target.closest('[data-audio]');
       if (audioBtn) {
