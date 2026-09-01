@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="MediaPull — YouTube ve Twitter / X videolarını Windows'ta indir. Free 1080p H.264; Pro ile 4K, ProRes ve kayıpsız ses. $4.99 lifetime.">
+  <meta name="theme-color" content="#0a0a0c">
+  <title>MediaPull — Medyayı çek, kaydet</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="preconnect" href="https://accounts.google.com">
+  <link rel="preconnect" href="https://apis.google.com">
+</head>
+<body>
+  <div id="g_id_onload"
+       data-client_id="692852964677-rtuf4dqbiee6855dkn5icmash15e34s7.apps.googleusercontent.com"
+       data-context="signin"
+       data-ux_mode="popup"
+       data-auto_prompt="false"
+       data-auto_select="false"
+       data-itp_support="true"
+       data-callback="handleCredentialResponse"></div>
+  <div class="noise" aria-hidden="true"></div>
+  <div class="glow glow-a" aria-hidden="true"></div>
+  <div class="glow glow-b" aria-hidden="true"></div>
+
+  <header class="site-header">
+    <a class="logo" href="/">
+      <span class="logo-mark" aria-hidden="true"></span>
+      MediaPull
+    </a>
+    <nav class="nav" id="nav">
+      <a href="/ozellikler">Özellikler</a>
+      <a href="/nasil">Nasıl çalışır</a>
+      <a href="/pro">Pro</a>
+      <a href="/indir">İndir</a>
+    </nav>
+    <div class="header-actions">
+      <a class="btn btn-outline btn-sm js-buy-cta" href="https://earslaner2001.gumroad.com/l/mediapull-pro" target="_blank" rel="noopener noreferrer">Pro'ya geç</a>
+      <a class="btn btn-ghost" href="https://github.com/earslaner2001/MediaPull" target="_blank" rel="noopener noreferrer">GitHub</a>
+      <div class="auth-slot" id="authSlot" data-state="out">
+        <div id="authSignedOut">
+          <div class="btn-google-wrap">
+            <button type="button" class="btn-google" id="btnGoogleSignIn" tabindex="-1">
+              <span class="btn-google-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" width="16" height="16">
+                  <path fill="#4285F4" d="M23.52 12.27c0-.85-.08-1.67-.22-2.46H12v4.66h6.46a5.52 5.52 0 0 1-2.4 3.62v3h3.88c2.27-2.09 3.58-5.17 3.58-8.82z"/>
+                  <path fill="#34A853" d="M12 24c3.24 0 5.96-1.07 7.95-2.91l-3.88-3c-1.08.72-2.47 1.15-4.07 1.15-3.13 0-5.78-2.11-6.73-4.96H1.28v3.09A12 12 0 0 0 12 24z"/>
+                  <path fill="#FBBC05" d="M5.27 14.28A7.21 7.21 0 0 1 4.9 12c0-.79.14-1.56.37-2.28V6.63H1.28A12 12 0 0 0 0 12c0 1.94.46 3.77 1.28 5.37l3.99-3.09z"/>
+                  <path fill="#EA4335" d="M12 4.75c1.76 0 3.35.61 4.6 1.8l3.45-3.45C17.95 1.19 15.24 0 12 0 7.31 0 3.26 2.69 1.28 6.63l3.99 3.09C6.22 6.86 8.87 4.75 12 4.75z"/>
+                </svg>
+              </span>
+              Google ile giriş
+            </button>
+            <div id="g_id_signin" class="gsi-hitbox" aria-label="Google ile giriş"></div>
+          </div>
+        </div>
+        <div class="user-chip" id="authSignedIn" hidden>
+          <img id="userAvatar" alt="" width="32" height="32" referrerpolicy="no-referrer" hidden>
+          <div class="user-meta">
+            <span class="user-name" id="userName"></span>
+            <span class="user-email" id="userEmail"></span>
+          </div>
+          <span class="license-pill free" id="userLicense">Free</span>
+          <button type="button" class="btn-signout" id="btnSignOut">Çıkış Yap</button>
+        </div>
+      </div>
+      <button class="nav-toggle" id="navToggle" aria-label="Menü" aria-expanded="false">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </header>
+  <p class="auth-error" id="authError" hidden></p>
+
+  <main>
+    <section class="hero">
+      <div class="hero-copy">
+        <p class="eyebrow">
+          <span class="badge">v2.3.0</span>
+          Windows masaüstü
+        </p>
+        <h1>Medyayı çek.<br><span class="accent">Kaydet.</span></h1>
+        <p class="lead">
+          YouTube ve Twitter / X bağlantısını yapıştır. MediaPull, Premiere / After Effects’in
+          okuyabildiği H.264 MP4 üretir. Pro ile 4K, ProRes ve kayıpsız ses.
+        </p>
+        <div class="hero-cta">
+          <a class="btn btn-primary" href="https://github.com/earslaner2001/MediaPull/releases/latest" target="_blank" rel="noopener noreferrer">
+            Windows için indir
+          </a>
+          <a class="btn btn-outline" href="https://earslaner2001.gumroad.com/l/mediapull-pro" target="_blank" rel="noopener noreferrer">
+            Pro satın al — $4.99
+          </a>
+        </div>
+        <ul class="hero-stats">
+          <li><strong>1080p</strong> Free H.264</li>
+          <li><strong>4K</strong> Pro plan</li>
+          <li><strong>$4.99</strong> lifetime</li>
+        </ul>
+      </div>
+
+      <div class="hero-visual" aria-hidden="true">
+        <div class="app-window">
+          <div class="app-titlebar">
+            <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+            <span class="app-title">MediaPull</span>
+          </div>
+          <div class="app-body">
+            <p class="app-section-label">Twitter / X Video İndir</p>
+            <div class="app-field">https://x.com/i/status/…</div>
+            <div class="app-btn">Twitter / X videosunu indir</div>
+            <div class="app-divider"></div>
+            <p class="app-section-label">YouTube Video İndir</p>
+            <div class="app-field dim">YouTube video linkini yapıştır</div>
+            <div class="app-select">1080p MP4 (video + ses)</div>
+            <div class="app-btn">YouTube'dan İndir</div>
+            <div class="app-progress"><span style="width:72%"></span></div>
+            <p class="app-status">72% indirildi…</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="ozellikler">
+      <div class="section-head">
+        <p class="eyebrow">Özellikler</p>
+        <h2>Az arayüz, çok iş</h2>
+      </div>
+      <div class="feature-grid">
+        <article class="feature-card">
+          <div class="feature-icon">YT</div>
+          <h3>YouTube</h3>
+          <p>Link doğrulama, otomatik dosya adı, 1080p MP4 veya MP3. Windows Media Player uyumlu ses.</p>
+        </article>
+        <article class="feature-card">
+          <div class="feature-icon">X</div>
+          <h3>Twitter / X</h3>
+          <p>Tweet veya video URL'sinden mümkün olan en iyi kalite. Dosya adı otomatik.</p>
+        </article>
+        <article class="feature-card">
+          <div class="feature-icon">DL</div>
+          <h3>Yerel kayıt</h3>
+          <p>İndirilenler klasöründe <code>MediaPullDownloads</code>. Verin sunucularımızdan geçmez.</p>
+        </article>
+        <article class="feature-card">
+          <div class="feature-icon">NLE</div>
+          <h3>Editor-Ready</h3>
+          <p>H.264 <code>yuv420p</code> + AAC. Premiere ve After Effects’te siyah ekran yok.</p>
+        </article>
+        <article class="feature-card">
+          <div class="feature-icon">FF</div>
+          <h3>Hazır kurulum</h3>
+          <p>İlk açılışta <code>yt-dlp</code> ve <code>ffmpeg</code> gerekirse otomatik indirilir.</p>
+        </article>
+        <article class="feature-card">
+          <div class="feature-icon">PRO</div>
+          <h3>Pro plan</h3>
+          <p>4K H.264, Apple ProRes 422 HQ, kayıpsız WAV. Uygulamada anahtarını yapıştır.</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="section section-alt" id="nasil">
+      <div class="section-inner">
+        <div class="section-head">
+          <p class="eyebrow">Nasıl çalışır</p>
+          <h2>Üç adım</h2>
+        </div>
+        <ol class="steps">
+          <li>
+            <span class="step-num">01</span>
+            <h3>İndir ve kur</h3>
+            <p>GitHub Releases'tan Windows yükleyicisini al, kurulumu tamamla.</p>
+          </li>
+          <li>
+            <span class="step-num">02</span>
+            <h3>Linki yapıştır</h3>
+            <p>YouTube veya X bağlantısını ilgili alana gir, formatı seç.</p>
+          </li>
+          <li>
+            <span class="step-num">03</span>
+            <h3>İndir</h3>
+            <p>Dosya hazır olunca klasöründe; ilerleme çubuğu ve ses geri bildirimi ile.</p>
+          </li>
+        </ol>
+      </div>
+    </section>
+
+    <section class="section" id="pro">
+      <div class="section-head">
+        <p class="eyebrow">Satın al</p>
+        <h2>Free ile başla, Pro ile bitir</h2>
+        <p class="section-lead">Uygulamayı ücretsiz indir. 4K, ProRes ve kayıpsız ses için Pro anahtarı al; uygulamadaki lisans penceresine yapıştır.</p>
+      </div>
+      <div class="pricing-grid">
+        <article class="price-card">
+          <p class="price-plan">Free</p>
+          <p class="price-amount">$0</p>
+          <p class="price-note">Sonsuza kadar</p>
+          <ul class="price-list">
+            <li>YouTube ve Twitter / X</li>
+            <li>1080p MP4 H.264 (Premiere / AE)</li>
+            <li>MP3 ses çıkarma</li>
+            <li>Duraklat / devam / süreç logu</li>
+          </ul>
+          <a class="btn btn-outline" href="https://github.com/earslaner2001/MediaPull/releases/latest" target="_blank" rel="noopener noreferrer">Ücretsiz indir</a>
+        </article>
+        <article class="price-card featured">
+          <p class="price-badge">Önerilen</p>
+          <p class="price-plan">Pro</p>
+          <p class="price-amount">$4.99<span> lifetime</span></p>
+          <p class="price-note">2 cihaz hakkı</p>
+          <ul class="price-list">
+            <li>Free’deki her şey</li>
+            <li>4K MP4 H.264</li>
+            <li>Apple ProRes 422 HQ</li>
+            <li>Kayıpsız WAV / yüksek bitrate ses</li>
+            <li>Toplu indirme ve maksimum hız</li>
+          </ul>
+          <a class="btn btn-primary" href="https://earslaner2001.gumroad.com/l/mediapull-pro" target="_blank" rel="noopener noreferrer">Pro satın al</a>
+        </article>
+      </div>
+      <p class="price-activate">Ödeme sonrası e-postana gelen lisansı uygulamadaki <strong>PRO'ya Geç</strong> penceresine yapıştır. 2 cihaz hakkı.</p>
+    </section>
+
+    <section class="section download" id="indir">
+      <div class="download-card">
+        <div>
+          <p class="eyebrow">İndir</p>
+          <h2>MediaPull v2.3.0</h2>
+          <p class="download-desc">Windows 10 / 11 · NSIS yükleyici · Electron</p>
+        </div>
+        <div class="download-actions">
+          <a class="btn btn-primary btn-lg" href="https://github.com/earslaner2001/MediaPull/releases/latest" target="_blank" rel="noopener noreferrer">
+            Son sürümü indir
+          </a>
+          <a class="btn btn-outline" href="https://earslaner2001.gumroad.com/l/mediapull-pro" target="_blank" rel="noopener noreferrer">
+            Pro satın al — $4.99
+          </a>
+          <a class="btn btn-ghost" href="https://github.com/earslaner2001/MediaPull/blob/main/CHANGELOG.md" target="_blank" rel="noopener noreferrer">
+            Sürüm notları
+          </a>
+        </div>
+      </div>
+      <p class="legal">
+        İndirilen içeriklerin kullanım hakları içerik sahiplerine aittir.
+        Yerel mevzuata ve platform kullanım şartlarına uygun kullanın.
+      </p>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <p>Copyright © 2026 MediaPull. Tüm hakları saklıdır.</p>
+    <div class="footer-links">
+      <a href="https://github.com/earslaner2001/MediaPull" target="_blank" rel="noopener noreferrer">Kaynak kod</a>
+      <a href="/pro">Pro</a>
+      <a href="https://github.com/earslaner2001/MediaPull/blob/main/COPYRIGHT.md" target="_blank" rel="noopener noreferrer">Telif</a>
+    </div>
+  </footer>
+
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+  <script src="/js/auth.js" defer></script>
+  <script src="/js/main.js" defer></script>
+</body>
+</html>
